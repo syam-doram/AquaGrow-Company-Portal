@@ -517,3 +517,92 @@ textarea.aq-input { resize: vertical; }
 :root.theme-light h1,
 :root.theme-light h2,
 :root.theme-light h3 { color: var(--aq-text-primary); }
+
+/* ══════════════════════════════════════════════════════════════════════════════
+   ENHANCED SIDEBAR STYLES
+   ══════════════════════════════════════════════════════════════════════════════ */
+
+/* Collapsed sidebar: icon-only rail */
+.aq-sidebar {
+  transition: width 0.28s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Nav group header hover */
+.aq-nav-group-header {
+  display: flex; align-items: center; gap: 0.5rem;
+  padding: 0.25rem 0.25rem 0.375rem;
+  border-radius: 0.5rem;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+.aq-nav-group-header:hover {
+  background: var(--aq-nav-hover-bg);
+}
+
+/* Sidebar tooltip overlay in collapsed mode */
+.aq-nav-tooltip {
+  position: absolute;
+  left: calc(100% + 12px);
+  top: 50%;
+  transform: translateY(-50%);
+  pointer-events: none;
+  z-index: 200;
+  opacity: 0;
+  white-space: nowrap;
+  transition: opacity 0.15s ease;
+}
+button:hover > .aq-nav-tooltip,
+a:hover > .aq-nav-tooltip {
+  opacity: 1;
+}
+
+/* Active nav item left bar glow */
+[data-nav-active="true"]::before {
+  content: '';
+  position: absolute;
+  left: 0; top: 50%; transform: translateY(-50%);
+  width: 3px; height: 60%;
+  border-radius: 9999px;
+  background: var(--primary);
+  box-shadow: 0 0 8px color-mix(in oklch, var(--primary) 60%, transparent);
+}
+
+/* User profile card live dot */
+.aq-online-dot {
+  width: 8px; height: 8px;
+  border-radius: 9999px;
+  background: oklch(0.72 0.19 167);
+  flex-shrink: 0;
+}
+
+/* Scrollbar in nav */
+nav::-webkit-scrollbar { width: 2px; }
+nav::-webkit-scrollbar-thumb { background: var(--aq-scrollbar); border-radius: 2px; }
+
+/* Header breadcrumb path */
+.aq-breadcrumb-group {
+  font-size: 0.625rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+}
+
+/* Light mode sidebar card overrides */
+:root.theme-light .aq-sidebar {
+  box-shadow: 1px 0 0 var(--aq-sidebar-border), 2px 0 12px oklch(0 0 0 / 4%);
+}
+
+/* Sidebar section divider (collapsed mode) */
+.aq-sidebar-divider {
+  margin: 0.5rem auto;
+  width: 1.25rem; height: 1px;
+  border-radius: 9999px;
+  background: var(--aq-glass-border);
+}
+
+/* Nav active indicator animation */
+@keyframes nav-appear {
+  from { opacity: 0; transform: translateX(-4px); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+.aq-nav-active { animation: nav-appear 0.2s ease; }
