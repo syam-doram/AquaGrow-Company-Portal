@@ -1,11 +1,11 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useAuth, type EmployeeRole, ROLE_LABELS, ROLE_COLORS } from '../context/AuthContext';
 import { motion, AnimatePresence } from 'motion/react';
 import {
   LayoutDashboard, Clock, CalendarDays, CreditCard, BookOpen,
   UserCircle, Bell, LogOut, Menu, Waves, ChevronRight, Users, Banknote,
   Ticket, FileText, BarChart3, Award, Package, ShieldCheck, Settings,
-  ClipboardList, TrendingUp, Building2, UserPlus,
+  ClipboardList, TrendingUp, Building2, UserPlus, Sun, Moon,
 } from 'lucide-react';
 
 interface LayoutProps {
@@ -113,6 +113,26 @@ const Layout: React.FC<LayoutProps> = ({ children, activeTab, setActiveTab }) =>
   const { employee, logout, hasRole } = useAuth();
   const [isMobileOpen, setIsMobileOpen] = useState(false);
 
+  // ── Theme (dark / light) ─────────────────────────────────────────────────────
+  const [isDark, setIsDark] = useState(() => {
+    const saved = localStorage.getItem('aq-theme');
+    return saved ? saved === 'dark' : true; // default dark
+  });
+
+  useEffect(() => {
+    const root = document.documentElement;
+    if (isDark) {
+      root.classList.remove('theme-light');
+      root.classList.add('theme-dark');
+    } else {
+      root.classList.remove('theme-dark');
+      root.classList.add('theme-light');
+    }
+    localStorage.setItem('aq-theme', isDark ? 'dark' : 'light');
+  }, [isDark]);
+
+  const toggleTheme = () => setIsDark(d => !d);
+
   // Filter nav items based on current user role
   const visibleGroups = ALL_NAV_GROUPS.map(g => ({
     ...g,
@@ -131,7 +151,7 @@ const Layout: React.FC<LayoutProps> = ({ children, activeTab, setActiveTab }) =>
 
 
   const SidebarContent = ({ onClose }: { onClose?: () => void }) => (
-    <div className="flex flex-col h-full" style={{ background: 'oklch(0.07 0.018 205)', borderRight: '1px solid oklch(1 0 0 / 6%)' }}>
+    <div className="flex flex-col h-full aq-sidebar">
       {/* Logo */}
       <div className="px-5 py-5 flex items-center gap-3 shrink-0">
         <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-[oklch(0.72_0.19_167)] to-[oklch(0.6_0.16_187)] flex items-center justify-center shadow-lg">
@@ -201,7 +221,7 @@ const Layout: React.FC<LayoutProps> = ({ children, activeTab, setActiveTab }) =>
   );
 
   return (
-    <div className="flex h-screen overflow-hidden" style={{ background: 'oklch(0.08 0.015 200)' }}>
+    <div className="flex h-screen overflow-hidden" style={{ background: 'var(--aq-body-bg)' }}>
       {/* Desktop Sidebar */}
       <aside className="hidden lg:flex w-56 flex-col shrink-0 overflow-hidden">
         <SidebarContent />
@@ -227,7 +247,7 @@ const Layout: React.FC<LayoutProps> = ({ children, activeTab, setActiveTab }) =>
       <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
         {/* Header */}
         <header className="h-13 shrink-0 flex items-center justify-between px-4 lg:px-5 gap-3"
-          style={{ background: 'oklch(0.09 0.018 205)', borderBottom: '1px solid oklch(1 0 0 / 6%)', minHeight: '52px' }}>
+          style={{ background: 'var(--aq-sidebar-bg)', borderBottom: '1px solid var(--aq-sidebar-border)', minHeight: '52px' }}>
           <div className="flex items-center gap-3">
             <button onClick={() => setIsMobileOpen(true)} className="lg:hidden aq-btn-ghost !p-1.5">
               <Menu size={17} />
@@ -242,8 +262,30 @@ const Layout: React.FC<LayoutProps> = ({ children, activeTab, setActiveTab }) =>
             </div>
           </div>
           <div className="flex items-center gap-2">
+            {/* Theme Toggle */}
+            <button
+              onClick={toggleTheme}
+              title={isDark ? 'Switch to Light Mode' : 'Switch to Dark Mode'}
+              className="relative flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl transition-all duration-300"
+              style={{
+                background: isDark ? 'oklch(0.72 0.19 167 / 10%)' : 'oklch(0.60 0.17 167 / 12%)',
+                border: `1px solid ${isDark ? 'oklch(0.72 0.19 167 / 20%)' : 'oklch(0.60 0.17 167 / 25%)'}`,
+              }}
+            >
+              {isDark ? (
+                <><Sun size={13} style={{ color: 'oklch(0.78 0.17 70)' }} />
+                <span className="text-[10px] font-bold hidden sm:inline" style={{ color: 'oklch(0.78 0.17 70)' }}>Light</span></>
+              ) : (
+                <><Moon size={13} style={{ color: 'oklch(0.60 0.17 167)' }} />
+                <span className="text-[10px] font-bold hidden sm:inline" style={{ color: 'oklch(0.60 0.17 167)' }}>Dark</span></>
+              )}
+            </button>
             {/* Notifications */}
-            <button className="relative p-1.5 rounded-xl hover:bg-white/5 text-[oklch(0.5_0.02_210)] hover:text-white transition-colors">
+            <button className="relative p-1.5 rounded-xl transition-colors"
+              style={{ color: 'var(--aq-text-muted)' }}
+              onMouseEnter={e => (e.currentTarget.style.color = 'var(--aq-text-primary)')}
+              onMouseLeave={e => (e.currentTarget.style.color = 'var(--aq-text-muted)')}
+            >
               <Bell size={16} />
               <span className="absolute top-1 right-1 w-1.5 h-1.5 rounded-full bg-[oklch(0.72_0.19_167)] pulse-ring" />
             </button>
