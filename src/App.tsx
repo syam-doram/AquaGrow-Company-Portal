@@ -243,7 +243,7 @@ const AppContent: React.FC = () => {
       case 'tickets':     return <TicketSystem admin={false} />;
 
       // ── HR & Admin ────────────────────────────────────────────────────
-      case 'hr-dashboard':  return hasPermission('view_employees') ? <HRDashboard /> : <Dashboard />;
+      case 'hr-dashboard':  return (hasRole('hr_manager') || hasRole('super_admin')) ? <HRDashboard /> : <Dashboard />;
       case 'recruitment':   return hasPermission('manage_employees') ? <Recruitment /> : <Dashboard />;
       case 'employees':     return hasPermission('view_employees') ? <EmployeeOnboarding /> : <Dashboard />;
       case 'leave-admin':   return hasPermission('approve_leaves') ? <LeaveApproval /> : <Leaves />;

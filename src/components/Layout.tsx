@@ -43,7 +43,7 @@ const ALL_NAV_GROUPS: { group: string; items: NavItem[] }[] = [
     group: 'Overview',
     items: [
       { id: 'dashboard',    label: 'Dashboard',     sub: 'Your daily snapshot',     icon: LayoutDashboard },
-      { id: 'hr-dashboard', label: 'HR Dashboard',  sub: 'People analytics',        icon: Building2, roles: ['super_admin','hr_manager','operations_manager'] },
+      { id: 'hr-dashboard', label: 'HR Dashboard',  sub: 'People analytics',        icon: Building2, roles: ['super_admin','hr_manager'] },
     ],
   },
   {
