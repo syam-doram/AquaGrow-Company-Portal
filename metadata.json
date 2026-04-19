@@ -1,0 +1,5 @@
+{
+  "name": "Aquagrow Employee Portal",
+  "description": "Internal web application for Aquagrow employees to manage attendance, leaves, payslips, tasks, and learning.",
+  "requestFramePermissions": []
+}

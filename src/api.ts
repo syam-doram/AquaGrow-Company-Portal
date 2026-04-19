@@ -1,0 +1,169 @@
+/**
+ * api.ts — Centralised API client for the AquaGrow HRMS Employee Portal
+ *
+ * Base URL: https://aquagrow.onrender.com/api/hrms
+ *
+ * Auth: Every request attaches the JWT from localStorage as a Bearer token.
+ * The JWT is issued by POST /api/hrms/auth/login (empId + password).
+ */
+
+const BASE = 'https://aquagrow.onrender.com/api/hrms';
+
+// ── Token helpers ──────────────────────────────────────────────────────────────
+export const getToken  = () => localStorage.getItem('hrms_token') ?? '';
+export const setToken  = (t: string) => localStorage.setItem('hrms_token', t);
+export const clearToken = () => localStorage.removeItem('hrms_token');
+
+// ── Core fetch wrapper ─────────────────────────────────────────────────────────
+async function apiFetch<T = any>(
+  path: string,
+  options: RequestInit = {}
+): Promise<T> {
+  const token = getToken();
+  const res = await fetch(`${BASE}${path}`, {
+    ...options,
+    headers: {
+      'Content-Type': 'application/json',
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      ...options.headers,
+    },
+  });
+
+  if (!res.ok) {
+    let message = `Request failed (${res.status})`;
+    try { message = (await res.json()).error ?? message; } catch {}
+    throw new Error(message);
+  }
+
+  // 204 No Content
+  if (res.status === 204) return undefined as any;
+  return res.json();
+}
+
+const get  = <T>(path: string) => apiFetch<T>(path);
+const post = <T>(path: string, body: any) => apiFetch<T>(path, { method: 'POST', body: JSON.stringify(body) });
+const put  = <T>(path: string, body: any) => apiFetch<T>(path, { method: 'PUT',  body: JSON.stringify(body) });
+const patch = <T>(path: string, body?: any) => apiFetch<T>(path, { method: 'PATCH', body: body ? JSON.stringify(body) : undefined });
+const del  = <T>(path: string) => apiFetch<T>(path, { method: 'DELETE' });
+
+// ════════════════════════════════════════════════════════════════════════════════
+//  AUTH
+// ════════════════════════════════════════════════════════════════════════════════
+export const hrmsApi = {
+  auth: {
+    /** Login with empId + password. Stores JWT automatically. */
+    login: async (empId: string, password: string) => {
+      const data = await post<{ token: string; employee: any }>('/auth/login', { empId, password });
+      setToken(data.token);
+      return data;
+    },
+    /** Verify token and return own profile. */
+    me: () => get<any>('/auth/me'),
+    logout: () => { clearToken(); },
+  },
+
+  // ════════════════════════════════════════════════════════════════════════════
+  //  EMPLOYEES
+  // ════════════════════════════════════════════════════════════════════════════
+  employees: {
+    list: (params?: { dept?: string; status?: string; search?: string }) => {
+      const q = params ? '?' + new URLSearchParams(params as any).toString() : '';
+      return get<any[]>(`/employees${q}`);
+    },
+    get:    (id: string) => get<any>(`/employees/${id}`),
+    create: (data: any) => post<any>('/employees', data),
+    update: (id: string, data: any) => put<any>(`/employees/${id}`, data),
+    remove: (id: string) => del<any>(`/employees/${id}`),
+  },
+
+  // ════════════════════════════════════════════════════════════════════════════
+  //  ATTENDANCE
+  // ════════════════════════════════════════════════════════════════════════════
+  attendance: {
+    list: (params?: { empId?: string; month?: string; date?: string }) => {
+      const q = params ? '?' + new URLSearchParams(params as any).toString() : '';
+      return get<any[]>(`/attendance${q}`);
+    },
+    checkIn:  () => post<any>('/attendance/checkin', {}),
+    checkOut: () => post<any>('/attendance/checkout', {}),
+    update:   (id: string, data: any) => put<any>(`/attendance/${id}`, data),
+  },
+
+  // ════════════════════════════════════════════════════════════════════════════
+  //  LEAVES
+  // ════════════════════════════════════════════════════════════════════════════
+  leaves: {
+    list:    (params?: { empId?: string; status?: string }) => {
+      const q = params ? '?' + new URLSearchParams(params as any).toString() : '';
+      return get<any[]>(`/leaves${q}`);
+    },
+    apply:   (data: any) => post<any>('/leaves', data),
+    update:  (id: string, data: any) => put<any>(`/leaves/${id}`, data),
+    comment: (id: string, text: string) => post<any>(`/leaves/${id}/comment`, { text }),
+  },
+
+  // ════════════════════════════════════════════════════════════════════════════
+  //  PAYROLL
+  // ════════════════════════════════════════════════════════════════════════════
+  payroll: {
+    list:         (params?: { month?: string; empId?: string; status?: string }) => {
+      const q = params ? '?' + new URLSearchParams(params as any).toString() : '';
+      return get<any[]>(`/payroll${q}`);
+    },
+    myPayslips:   () => get<any[]>('/payslips'),
+    create:       (data: any) => post<any>('/payroll', data),
+    bulkGenerate: (month: string) => post<any>('/payroll/bulk-generate', { month }),
+    update:       (id: string, data: any) => put<any>(`/payroll/${id}`, data),
+  },
+
+  // ════════════════════════════════════════════════════════════════════════════
+  //  TICKETS
+  // ════════════════════════════════════════════════════════════════════════════
+  tickets: {
+    list:    (params?: { status?: string; category?: string; priority?: string }) => {
+      const q = params ? '?' + new URLSearchParams(params as any).toString() : '';
+      return get<any[]>(`/tickets${q}`);
+    },
+    create:  (data: any) => post<any>('/tickets', data),
+    update:  (id: string, data: any) => put<any>(`/tickets/${id}`, data),
+    message: (id: string, text: string) => post<any>(`/tickets/${id}/message`, { text }),
+  },
+
+  // ════════════════════════════════════════════════════════════════════════════
+  //  PERFORMANCE
+  // ════════════════════════════════════════════════════════════════════════════
+  performance: {
+    list:   (params?: { empId?: string; period?: string }) => {
+      const q = params ? '?' + new URLSearchParams(params as any).toString() : '';
+      return get<any[]>(`/performance${q}`);
+    },
+    create: (data: any) => post<any>('/performance', data),
+    update: (id: string, data: any) => put<any>(`/performance/${id}`, data),
+  },
+
+  // ════════════════════════════════════════════════════════════════════════════
+  //  DASHBOARD
+  // ════════════════════════════════════════════════════════════════════════════
+  dashboard: {
+    stats: () => get<{
+      totalEmployees: number;
+      activeEmployees: number;
+      presentToday: number;
+      pendingLeaves: number;
+      openTickets: number;
+      payrollDrafts: number;
+      attendanceRate: number;
+      deptBreakdown: { _id: string; count: number }[];
+    }>('/dashboard'),
+  },
+
+  // ════════════════════════════════════════════════════════════════════════════
+  //  NOTIFICATIONS
+  // ════════════════════════════════════════════════════════════════════════════
+  notifications: {
+    list:     () => get<any[]>('/notifications'),
+    markRead: () => patch('/notifications/mark-read'),
+  },
+};
+
+export default hrmsApi;

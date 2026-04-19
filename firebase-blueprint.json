@@ -1,0 +1,121 @@
+{
+  "entities": {
+    "Employee": {
+      "title": "Employee",
+      "description": "Employee profile and sensitive data",
+      "type": "object",
+      "properties": {
+        "uid": { "type": "string", "description": "Firebase Auth UID" },
+        "name": { "type": "string" },
+        "email": { "type": "string", "format": "email" },
+        "phone": { "type": "string" },
+        "role": { "type": "string", "enum": ["admin", "manager", "employee"] },
+        "salary": { "type": "number" },
+        "bankDetails": {
+          "type": "object",
+          "properties": {
+            "accountNumber": { "type": "string" },
+            "ifsc": { "type": "string" },
+            "bankName": { "type": "string" }
+          }
+        },
+        "aadhaar": { "type": "string" },
+        "pan": { "type": "string" },
+        "photoUrl": { "type": "string", "format": "uri" },
+        "joinedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["uid", "name", "email", "role"]
+    },
+    "Attendance": {
+      "title": "Attendance",
+      "description": "Daily attendance records",
+      "type": "object",
+      "properties": {
+        "employeeId": { "type": "string" },
+        "date": { "type": "string", "format": "date" },
+        "checkIn": { "type": "string", "format": "date-time" },
+        "checkOut": { "type": "string", "format": "date-time" },
+        "status": { "type": "string", "enum": ["present", "absent", "late"] },
+        "workingHours": { "type": "number" }
+      },
+      "required": ["employeeId", "date", "checkIn"]
+    },
+    "Leave": {
+      "title": "Leave",
+      "description": "Leave applications",
+      "type": "object",
+      "properties": {
+        "employeeId": { "type": "string" },
+        "type": { "type": "string", "enum": ["sick", "casual", "vacation"] },
+        "from": { "type": "string", "format": "date" },
+        "to": { "type": "string", "format": "date" },
+        "status": { "type": "string", "enum": ["pending", "approved", "rejected"] },
+        "reason": { "type": "string" },
+        "appliedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["employeeId", "type", "from", "to", "status"]
+    },
+    "Task": {
+      "title": "Task",
+      "description": "Work tasks assigned to employees",
+      "type": "object",
+      "properties": {
+        "title": { "type": "string" },
+        "description": { "type": "string" },
+        "assignedTo": { "type": "string", "description": "Employee UID" },
+        "deadline": { "type": "string", "format": "date-time" },
+        "status": { "type": "string", "enum": ["pending", "in-progress", "completed"] },
+        "progress": { "type": "number" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["title", "assignedTo", "status"]
+    },
+    "Course": {
+      "title": "Course",
+      "description": "Training courses",
+      "type": "object",
+      "properties": {
+        "title": { "type": "string" },
+        "description": { "type": "string" },
+        "videoUrl": { "type": "string", "format": "uri" },
+        "category": { "type": "string" }
+      },
+      "required": ["title", "videoUrl"]
+    },
+    "Enrollment": {
+      "title": "Enrollment",
+      "description": "Employee course progress",
+      "type": "object",
+      "properties": {
+        "employeeId": { "type": "string" },
+        "courseId": { "type": "string" },
+        "status": { "type": "string", "enum": ["enrolled", "completed"] },
+        "progress": { "type": "number" }
+      },
+      "required": ["employeeId", "courseId", "status"]
+    },
+    "Notification": {
+      "title": "Notification",
+      "description": "System notifications",
+      "type": "object",
+      "properties": {
+        "recipientId": { "type": "string" },
+        "title": { "type": "string" },
+        "message": { "type": "string" },
+        "type": { "type": "string", "enum": ["info", "alert", "success"] },
+        "read": { "type": "boolean" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["recipientId", "title", "message", "read", "createdAt"]
+    }
+  },
+  "firestore": {
+    "/employees/{uid}": { "schema": "Employee", "description": "Employee profiles" },
+    "/attendance/{attendanceId}": { "schema": "Attendance", "description": "Attendance logs" },
+    "/leaves/{leaveId}": { "schema": "Leave", "description": "Leave requests" },
+    "/tasks/{taskId}": { "schema": "Task", "description": "Assigned tasks" },
+    "/courses/{courseId}": { "schema": "Course", "description": "Available courses" },
+    "/enrollments/{enrollmentId}": { "schema": "Enrollment", "description": "Course enrollments" },
+    "/notifications/{notificationId}": { "schema": "Notification", "description": "User notifications" }
+  }
+}

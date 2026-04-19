@@ -1,0 +1,25 @@
+{
+  // ─── Tailwind CSS v4 — suppress false-positive CSS warnings ──────────────
+  // @custom-variant, @theme, @layer etc. are Tailwind v4 at-rules.
+  // VS Code's built-in CSS linter doesn't know them → shows "unknown at-rule".
+  // These are NOT real errors; the build succeeds fine.
+  "css.lint.unknownAtRules": "ignore",
+  "scss.lint.unknownAtRules": "ignore",
+
+  // ─── Use Tailwind IntelliSense for CSS files ──────────────────────────────
+  "tailwindCSS.includeLanguages": {
+    "css": "css"
+  },
+  "editor.quickSuggestions": {
+    "strings": "on"
+  },
+
+  // ─── File Associations ────────────────────────────────────────────────────
+  "files.associations": {
+    "*.css": "tailwindcss"
+  },
+
+  // ─── TypeScript ───────────────────────────────────────────────────────────
+  "typescript.tsdk": "node_modules/typescript/lib",
+  "typescript.enablePromptUseWorkspaceTsdk": true
+}

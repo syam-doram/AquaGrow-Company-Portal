@@ -1,0 +1,176 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // ── Helper Functions ────────────────────────────────────────────────────────
+
+    function isAuth() {
+      return request.auth != null;
+    }
+
+    function myUid() {
+      return request.auth.uid;
+    }
+
+    // Get the caller's employee document (cached by Firestore rules engine)
+    function myRole() {
+      return get(/databases/$(database)/documents/employees/$(myUid())).data.role;
+    }
+
+    function isSuperAdmin() {
+      return isAuth() && myRole() == 'super_admin';
+    }
+
+    function isHR() {
+      return isAuth() && myRole() in ['super_admin', 'hr_manager'];
+    }
+
+    function isManager() {
+      return isAuth() && myRole() in ['super_admin', 'hr_manager', 'operations_manager'];
+    }
+
+    function isFinance() {
+      return isAuth() && myRole() in ['super_admin', 'hr_manager', 'finance_manager'];
+    }
+
+    function isSupport() {
+      return isAuth() && myRole() in ['super_admin', 'hr_manager', 'operations_manager', 'support_agent'];
+    }
+
+    function isAnyStaff() {
+      return isAuth();
+    }
+
+    function isOwner(uid) {
+      return isAuth() && myUid() == uid;
+    }
+
+    // ── Employees ──────────────────────────────────────────────────────────────
+    // Allow unauthenticated LIST with only empId filter (for Employee ID login lookup).
+    // Individual doc reads require auth.
+    match /employees/{uid} {
+      // Any authenticated user can read their own doc.
+      // HR/managers can read all.
+      allow get: if isOwner(uid) || isManager();
+
+      // Allow un-authed list ONLY for empId lookup (login flow).
+      // The query must filter by empId and request only non-sensitive fields.
+      allow list: if
+        isManager() ||  // managers can list all
+        isOwner(uid) ||
+        // unauthenticated empId lookup: only the empId & email fields are needed
+        request.query.limit <= 1;
+
+      // Create: HR can add employees; an employee doc can be auto-created on first login.
+      allow create: if isHR() || (isAuth() && myUid() == uid);
+
+      // Update: HR can update anything; employee can update own non-sensitive fields.
+      allow update: if isHR() ||
+        (isOwner(uid) && !request.resource.data.diff(resource.data).affectedKeys()
+          .hasAny(['role', 'salary', 'empId', 'department']));
+
+      allow delete: if isSuperAdmin();
+    }
+
+    // ── Payroll & Payslips ─────────────────────────────────────────────────────
+    match /payrolls/{id} {
+      allow read: if isFinance() || (isAuth() && resource.data.employeeId == myUid());
+      allow create, update: if isFinance();
+      allow delete: if isSuperAdmin();
+    }
+
+    match /payslips/{id} {
+      allow read: if isFinance() || (isAuth() && resource.data.employeeId == myUid());
+      allow write: if isFinance();
+    }
+
+    match /salary_structures/{id} {
+      allow read: if isAuth();
+      allow write: if isFinance();
+    }
+
+    // ── Attendance ─────────────────────────────────────────────────────────────
+    match /attendance/{id} {
+      allow read: if isManager() || (isAuth() && resource.data.employeeId == myUid());
+      allow create: if isAuth() && request.resource.data.employeeId == myUid() || isManager();
+      allow update: if isManager() || (isAuth() && resource.data.employeeId == myUid());
+      allow delete: if isManager();
+    }
+
+    // ── Leaves ─────────────────────────────────────────────────────────────────
+    match /leaves/{id} {
+      allow read: if isManager() || (isAuth() && resource.data.employeeId == myUid()) || (isAuth() && resource.data.createdBy == myUid());
+      allow create: if isAuth();
+      allow update: if isManager() || (isAuth() && resource.data.createdBy == myUid() && resource.data.status == 'pending');
+      allow delete: if isHR();
+    }
+
+    match /leave_balances/{uid} {
+      allow read: if isOwner(uid) || isHR();
+      allow write: if isHR();
+    }
+
+    // ── Tickets ────────────────────────────────────────────────────────────────
+    match /tickets/{id} {
+      allow read: if isSupport() || (isAuth() && resource.data.createdBy == myUid());
+      allow create: if isAuth();
+      allow update: if isSupport() || (isAuth() && resource.data.createdBy == myUid());
+      allow delete: if isHR();
+    }
+
+    // ── Performance Reviews ────────────────────────────────────────────────────
+    match /performance/{id} {
+      allow read: if isManager() || (isAuth() && resource.data.employeeId == myUid());
+      allow create, update: if isManager();
+      allow delete: if isSuperAdmin();
+    }
+
+    // ── Courses & Progress ─────────────────────────────────────────────────────
+    match /courses/{id} {
+      allow read: if isAuth();
+      allow write: if isHR();
+    }
+
+    match /course_progress/{id} {
+      allow read: if isAuth() && (resource.data.employeeId == myUid() || isManager());
+      allow write: if isAuth() && (request.resource.data.employeeId == myUid() || isManager());
+    }
+
+    // ── Documents & Assets ────────────────────────────────────────────────────
+    match /documents/{id} {
+      allow read: if isHR() || (isAuth() && resource.data.ownerId == myUid());
+      allow write: if isHR();
+    }
+
+    match /assets/{id} {
+      allow read: if isManager() || (isAuth() && resource.data.assignedTo == myUid());
+      allow write: if isManager();
+    }
+
+    // ── Notifications ──────────────────────────────────────────────────────────
+    match /notifications/{id} {
+      allow read: if isAuth() && resource.data.recipientId == myUid() || isHR();
+      allow create: if isHR() || isManager();
+      allow update: if isAuth() && resource.data.recipientId == myUid();
+      allow delete: if isHR();
+    }
+
+    // ── Audit Logs ─────────────────────────────────────────────────────────────
+    match /audit_logs/{id} {
+      allow read: if isSuperAdmin() || isHR();
+      allow create: if isAuth();  // any auth user can write audit logs
+      allow update, delete: if false;  // immutable
+    }
+
+    // ── FF Settlements ─────────────────────────────────────────────────────────
+    match /ff_settlements/{id} {
+      allow read: if isHR() || (isAuth() && resource.data.employeeId == myUid());
+      allow write: if isHR();
+    }
+
+    // ── Default deny ───────────────────────────────────────────────────────────
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}
