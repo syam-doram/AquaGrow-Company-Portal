@@ -5,7 +5,7 @@ import {
   LayoutDashboard, Clock, CalendarDays, CreditCard, BookOpen,
   UserCircle, Bell, LogOut, Menu, Waves, ChevronRight, Users, Banknote,
   Ticket, FileText, BarChart3, Award, Package, ShieldCheck, Settings,
-  ClipboardList, TrendingUp, Building2,
+  ClipboardList, TrendingUp, Building2, UserPlus,
 } from 'lucide-react';
 
 interface LayoutProps {
@@ -47,6 +47,7 @@ const ALL_NAV_GROUPS: { group: string; items: NavItem[] }[] = [
   {
     group: 'HR & Admin',
     items: [
+      { id: 'recruitment', label: 'Recruitment',    icon: UserPlus,    roles: ['super_admin','hr_manager'] },
       { id: 'employees',    label: 'Employees',       icon: Users,       roles: ['super_admin','hr_manager','operations_manager'] },
       { id: 'leave-admin',  label: 'Leave Approvals', icon: CalendarDays,roles: ['super_admin','hr_manager','operations_manager'] },
       { id: 'att-admin',    label: 'Attendance Admin',icon: Clock,       roles: ['super_admin','hr_manager','operations_manager'] },

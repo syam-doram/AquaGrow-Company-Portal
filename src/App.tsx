@@ -14,6 +14,7 @@ import Profile from './pages/Profile';
 // ─── New HRMS Pages ────────────────────────────────────────────────────────────
 import HRDashboard from './pages/HRDashboard';
 import EmployeeOnboarding from './pages/EmployeeOnboarding';
+import Recruitment from './pages/Recruitment';
 import PayrollManagement from './pages/PayrollManagement';
 import LeaveApproval from './pages/LeaveApproval';
 import TicketSystem from './pages/TicketSystem';
@@ -242,11 +243,12 @@ const AppContent: React.FC = () => {
       case 'tickets':     return <TicketSystem admin={false} />;
 
       // ── HR & Admin ────────────────────────────────────────────────────
-      case 'hr-dashboard': return hasPermission('view_employees') ? <HRDashboard /> : <Dashboard />;
-      case 'employees':    return hasPermission('view_employees') ? <EmployeeOnboarding /> : <Dashboard />;
-      case 'leave-admin':  return hasPermission('approve_leaves') ? <LeaveApproval /> : <Leaves />;
-      case 'performance':  return hasPermission('view_performance') ? <PerformanceReviews /> : <Dashboard />;
-      case 'att-admin':    return hasPermission('manage_attendance') ? <Attendance /> : <Attendance />;
+      case 'hr-dashboard':  return hasPermission('view_employees') ? <HRDashboard /> : <Dashboard />;
+      case 'recruitment':   return hasPermission('manage_employees') ? <Recruitment /> : <Dashboard />;
+      case 'employees':     return hasPermission('view_employees') ? <EmployeeOnboarding /> : <Dashboard />;
+      case 'leave-admin':   return hasPermission('approve_leaves') ? <LeaveApproval /> : <Leaves />;
+      case 'performance':   return hasPermission('view_performance') ? <PerformanceReviews /> : <Dashboard />;
+      case 'att-admin':     return hasPermission('manage_attendance') ? <Attendance /> : <Attendance />;
 
       // ── Finance & Payroll ─────────────────────────────────────────────
       case 'payroll':    return hasPermission('view_payroll') ? <PayrollManagement /> : <Payslips />;
