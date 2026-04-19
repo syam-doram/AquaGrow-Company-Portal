@@ -40,6 +40,8 @@ const Leaves: React.FC = () => {
   const [fromDate, setFromDate] = useState('');
   const [toDate, setToDate] = useState('');
   const [reason, setReason] = useState('');
+  const [filterYear, setFilterYear] = useState(new Date().getFullYear());
+  const YEARS = [2024, 2025, 2026, 2027];
 
   useEffect(() => {
     if (!employee) return;
@@ -78,8 +80,9 @@ const Leaves: React.FC = () => {
     }
   };
 
-  const approved = leaves.filter(l => l.status === 'approved');
-  const pending  = leaves.filter(l => l.status === 'pending');
+  const approved = leaves.filter(l => l.status === 'approved' && new Date(l.from).getFullYear() === filterYear);
+  const pending  = leaves.filter(l => l.status === 'pending'  && new Date(l.from).getFullYear() === filterYear);
+  const allFiltered = leaves.filter(l => new Date(l.from).getFullYear() === filterYear);
   const totalDays = (l: LeaveRecord) =>
     Math.max(1, differenceInCalendarDays(new Date(l.to), new Date(l.from)) + 1);
 
@@ -93,9 +96,15 @@ const Leaves: React.FC = () => {
           <h1 className="text-2xl font-bold text-white" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>Leave Management</h1>
           <p className="text-sm text-[oklch(0.5_0.02_210)] mt-0.5">Apply for leaves and track your requests in real time.</p>
         </div>
-        <button onClick={() => setShowModal(true)} className="aq-btn-primary shrink-0">
-          <Plus size={16} /> Apply Leave
-        </button>
+        <div className="flex items-center gap-2 shrink-0">
+          <select value={filterYear} onChange={e => setFilterYear(Number(e.target.value))}
+            className="aq-input !py-1.5 !text-xs !w-auto">
+            {YEARS.map(y => <option key={y}>{y}</option>)}
+          </select>
+          <button onClick={() => setShowModal(true)} className="aq-btn-primary">
+            <Plus size={16} /> Apply Leave
+          </button>
+        </div>
       </div>
 
       {/* Stats */}
@@ -145,11 +154,11 @@ const Leaves: React.FC = () => {
       {/* Leave List */}
       <div className="glass-panel overflow-hidden">
         <div className="p-5" style={{ borderBottom: '1px solid oklch(1 0 0 / 6%)' }}>
-          <h3 className="text-sm font-bold text-white" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>Leave History</h3>
-          <p className="text-[10px] text-[oklch(0.5_0.02_210)]">{leaves.length} record{leaves.length !== 1 ? 's' : ''}</p>
+          <h3 className="text-sm font-bold text-white" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>Leave History — {filterYear}</h3>
+          <p className="text-[10px] text-[oklch(0.5_0.02_210)]">{allFiltered.length} record{allFiltered.length !== 1 ? 's' : ''} this year</p>
         </div>
         <div className="divide-y divide-white/5">
-          {leaves.map((leave, i) => {
+          {allFiltered.map((leave, i) => {
             const cfg = statusConfig[leave.status as keyof typeof statusConfig] ?? statusConfig.pending;
             const lt = LEAVE_TYPES.find(t => t.value === leave.type);
             const days = totalDays(leave);

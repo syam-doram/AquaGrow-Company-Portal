@@ -34,6 +34,8 @@ const PayrollManagement: React.FC = () => {
   const [selYear, setSelYear] = useState(new Date().getFullYear());
   const [running, setRunning] = useState(false);
   const [search, setSearch] = useState('');
+  const [filterYear, setFilterYear] = useState(new Date().getFullYear());
+  const YEARS = [2024, 2025, 2026, 2027];
   const canRun     = hasPermission('run_payroll');
   const canApprove = hasPermission('approve_payroll');
 
@@ -113,8 +115,9 @@ const PayrollManagement: React.FC = () => {
   };
 
   const filtered = payrolls.filter(p =>
-    !search || p.employeeName.toLowerCase().includes(search.toLowerCase()) ||
-    p.month.toLowerCase().includes(search.toLowerCase())
+    (filterYear === 0 || p.year === filterYear) &&
+    (!search || p.employeeName.toLowerCase().includes(search.toLowerCase()) ||
+    p.month.toLowerCase().includes(search.toLowerCase()))
   );
 
   // Summary stats
@@ -169,6 +172,11 @@ const PayrollManagement: React.FC = () => {
           <input value={search} onChange={e => setSearch(e.target.value)}
             placeholder="Search employee or month…" className="aq-input pl-8 !py-1.5 !text-xs" />
         </div>
+        <select value={filterYear} onChange={e => setFilterYear(Number(e.target.value))}
+          className="aq-input !py-1.5 !text-xs !w-auto">
+          <option value={0}>All Years</option>
+          {YEARS.map(y => <option key={y}>{y}</option>)}
+        </select>
       </div>
 
       {/* Payroll Table */}

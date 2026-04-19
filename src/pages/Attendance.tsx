@@ -30,6 +30,11 @@ const Attendance: React.FC = () => {
   const [todayRecord, setTodayRecord] = useState<AttendanceRecord | null>(null);
   const [loading, setLoading] = useState(false);
   const [now, setNow] = useState(new Date());
+  const [filterYear, setFilterYear] = useState<number>(new Date().getFullYear());
+  const [filterMonth, setFilterMonth] = useState<number>(new Date().getMonth()); // 0-indexed
+
+  const YEARS = [2024, 2025, 2026, 2027];
+  const MONTHS_LABEL = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
 
   // Live clock
   useEffect(() => {
@@ -203,48 +208,58 @@ const Attendance: React.FC = () => {
 
         {/* Attendance History */}
         <div className="lg:col-span-2 glass-panel overflow-hidden">
-          <div className="p-5 flex items-center justify-between" style={{ borderBottom: '1px solid oklch(1 0 0 / 6%)' }}>
+          <div className="p-4 flex flex-wrap items-center gap-3 justify-between" style={{ borderBottom: '1px solid oklch(1 0 0 / 6%)' }}>
             <div>
               <h3 className="text-sm font-bold text-white" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>Attendance History</h3>
-              <p className="text-[10px] text-[oklch(0.5_0.02_210)]">Last {Math.min(records.length, 20)} records</p>
+              <p className="text-[10px] text-[oklch(0.5_0.02_210)]">Filter by year &amp; month</p>
             </div>
-            <History size={16} className="text-[oklch(0.5_0.02_210)]" />
+            {/* Year / Month filters */}
+            <div className="flex items-center gap-2">
+              <select value={filterYear} onChange={e => setFilterYear(Number(e.target.value))}
+                className="aq-input !py-1 !text-xs !w-auto">
+                {YEARS.map(y => <option key={y}>{y}</option>)}
+              </select>
+              <select value={filterMonth} onChange={e => setFilterMonth(Number(e.target.value))}
+                className="aq-input !py-1 !text-xs !w-auto">
+                {MONTHS_LABEL.map((m, i) => <option key={m} value={i}>{m}</option>)}
+              </select>
+            </div>
           </div>
-          <div className="overflow-x-auto">
-            <table className="w-full aq-table">
-              <thead>
-                <tr>
-                  <th className="text-left">Date</th>
-                  <th className="text-left">Check In</th>
-                  <th className="text-left">Check Out</th>
-                  <th className="text-left">Hours</th>
-                  <th className="text-left">Status</th>
-                </tr>
-              </thead>
-              <tbody>
-                {records.map((rec, i) => (
-                  <motion.tr key={rec.id} initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: i * 0.04 }}>
-                    <td className="font-medium text-white">{format(new Date(rec.date), 'MMM dd, yyyy')}</td>
-                    <td className="font-mono">{format(rec.checkIn.toDate(), 'hh:mm a')}</td>
-                    <td className="font-mono">{rec.checkOut ? format(rec.checkOut.toDate(), 'hh:mm a') : <span className="text-[oklch(0.45_0.02_210)]">–</span>}</td>
-                    <td>{rec.workingHours ? <span className="text-[oklch(0.72_0.19_167)] font-bold">{rec.workingHours}h</span> : <span className="text-[oklch(0.45_0.02_210)]">–</span>}</td>
-                    <td>
-                      <span className={`aq-badge ${statusColors[rec.status]?.badge ?? 'aq-badge-green'}`}>
-                        {rec.status.replace('_', ' ')}
-                      </span>
-                    </td>
-                  </motion.tr>
-                ))}
-                {records.length === 0 && (
-                  <tr>
-                    <td colSpan={5} className="text-center py-12 text-[oklch(0.45_0.02_210)]">
-                      No attendance records yet.
-                    </td>
-                  </tr>
-                )}
-              </tbody>
-            </table>
-          </div>
+          {(() => {
+            const filtered = records.filter(rec => {
+              const d = new Date(rec.date);
+              return d.getFullYear() === filterYear && d.getMonth() === filterMonth;
+            });
+            return (
+              <div className="overflow-x-auto">
+                <table className="w-full aq-table">
+                  <thead><tr>
+                    <th className="text-left">Date</th>
+                    <th className="text-left">Check In</th>
+                    <th className="text-left">Check Out</th>
+                    <th className="text-left">Hours</th>
+                    <th className="text-left">Status</th>
+                  </tr></thead>
+                  <tbody>
+                    {filtered.map((rec, i) => (
+                      <motion.tr key={rec.id} initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: i * 0.04 }}>
+                        <td className="font-medium text-white">{format(new Date(rec.date), 'MMM dd, yyyy')}</td>
+                        <td className="font-mono">{format(rec.checkIn.toDate(), 'hh:mm a')}</td>
+                        <td className="font-mono">{rec.checkOut ? format(rec.checkOut.toDate(), 'hh:mm a') : <span className="text-[oklch(0.45_0.02_210)]">–</span>}</td>
+                        <td>{rec.workingHours ? <span className="text-[oklch(0.72_0.19_167)] font-bold">{rec.workingHours}h</span> : <span className="text-[oklch(0.45_0.02_210)]">–</span>}</td>
+                        <td><span className={`aq-badge ${statusColors[rec.status]?.badge ?? 'aq-badge-green'}`}>{rec.status.replace('_', ' ')}</span></td>
+                      </motion.tr>
+                    ))}
+                    {filtered.length === 0 && (
+                      <tr><td colSpan={5} className="text-center py-12 text-[oklch(0.45_0.02_210)] text-xs">
+                        No records for {MONTHS_LABEL[filterMonth]} {filterYear}
+                      </td></tr>
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            );
+          })()}
         </div>
       </div>
     </div>

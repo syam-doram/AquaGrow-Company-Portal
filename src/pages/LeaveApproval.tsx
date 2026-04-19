@@ -27,6 +27,8 @@ const LeaveApproval: React.FC = () => {
   const [leaves, setLeaves] = useState<LeaveRecord[]>([]);
   const [filter, setFilter] = useState<string>('pending');
   const [search, setSearch] = useState('');
+  const [filterYear, setFilterYear] = useState(new Date().getFullYear());
+  const YEARS = [2024, 2025, 2026, 2027];
   const [selected, setSelected] = useState<LeaveRecord | null>(null);
   const [comment, setComment] = useState('');
   const [processing, setProcessing] = useState(false);
@@ -66,7 +68,8 @@ const LeaveApproval: React.FC = () => {
     const matchFilter = filter === 'all' || l.status === filter;
     const matchSearch = !search || (l.employeeName ?? '').toLowerCase().includes(search.toLowerCase()) ||
       l.type.toLowerCase().includes(search.toLowerCase());
-    return matchFilter && matchSearch;
+    const matchYear = filterYear === 0 || new Date(l.from).getFullYear() === filterYear;
+    return matchFilter && matchSearch && matchYear;
   });
 
   const pending   = leaves.filter(l => l.status === 'pending').length;
@@ -104,6 +107,11 @@ const LeaveApproval: React.FC = () => {
           <input value={search} onChange={e => setSearch(e.target.value)}
             placeholder="Search employee…" className="aq-input pl-8 !py-1.5 !text-xs" />
         </div>
+        <select value={filterYear} onChange={e => setFilterYear(Number(e.target.value))}
+          className="aq-input !py-1.5 !text-xs !w-auto">
+          <option value={0}>All Years</option>
+          {YEARS.map(y => <option key={y}>{y}</option>)}
+        </select>
         {['all','pending','approved','rejected'].map(f => (
           <button key={f} onClick={() => setFilter(f)}
             className="px-3 py-1.5 rounded-xl text-[10px] font-bold capitalize transition-all"

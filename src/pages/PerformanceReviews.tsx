@@ -35,6 +35,8 @@ const PerformanceReviews: React.FC = () => {
   const [employees, setEmployees] = useState<any[]>([]);
   const [showModal, setShowModal] = useState(false);
   const [search, setSearch] = useState('');
+  const [filterYear, setFilterYear] = useState<number>(new Date().getFullYear());
+  const YEARS = [2024, 2025, 2026, 2027];
   const [form, setForm] = useState({
     employeeId: '', employeeName: '',
     month: MONTHS[new Date().getMonth()], year: new Date().getFullYear(),
@@ -76,7 +78,8 @@ const PerformanceReviews: React.FC = () => {
   };
 
   const filtered = reviews.filter(r =>
-    !search || r.employeeName.toLowerCase().includes(search.toLowerCase())
+    (filterYear === 0 || r.year === filterYear) &&
+    (!search || r.employeeName.toLowerCase().includes(search.toLowerCase()))
   );
 
   const avgRating = reviews.length ? (reviews.reduce((s, r) => s + r.rating, 0) / reviews.length).toFixed(1) : '—';
@@ -115,11 +118,18 @@ const PerformanceReviews: React.FC = () => {
         ))}
       </div>
 
-      {/* Search */}
-      <div className="relative max-w-sm">
-        <Search size={13} className="absolute left-3 top-1/2 -translate-y-1/2 text-[oklch(0.45_0.02_210)]" />
-        <input value={search} onChange={e => setSearch(e.target.value)}
-          placeholder="Search employee…" className="aq-input pl-8 !py-1.5 !text-xs" />
+      {/* Search + Year filter */}
+      <div className="flex gap-2 items-center">
+        <div className="relative flex-1 max-w-sm">
+          <Search size={13} className="absolute left-3 top-1/2 -translate-y-1/2 text-[oklch(0.45_0.02_210)]" />
+          <input value={search} onChange={e => setSearch(e.target.value)}
+            placeholder="Search employee…" className="aq-input pl-8 !py-1.5 !text-xs" />
+        </div>
+        <select value={filterYear} onChange={e => setFilterYear(Number(e.target.value))}
+          className="aq-input !py-1.5 !text-xs !w-auto">
+          <option value={0}>All Years</option>
+          {YEARS.map(y => <option key={y}>{y}</option>)}
+        </select>
       </div>
 
       {/* Reviews Grid */}
