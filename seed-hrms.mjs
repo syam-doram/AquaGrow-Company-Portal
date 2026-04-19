@@ -7,7 +7,7 @@
 import mongoose from 'mongoose';
 import bcrypt from 'bcryptjs';
 
-const MONGO_URI = 'mongodb+srv://syamkdoram_db_user:xVMRfYAFMYYZvLzT@ac-k6ux81i.mongodb.net/aquagrow?retryWrites=true&w=majority';
+const MONGO_URI = 'mongodb://syamkdoram_db_user:xVMRfYAFMYYZvLzT@aquagrow-cluster-shard-00-00.k6ux81i.mongodb.net:27017,aquagrow-cluster-shard-00-01.k6ux81i.mongodb.net:27017,aquagrow-cluster-shard-00-02.k6ux81i.mongodb.net:27017/aquagrow?ssl=true&replicaSet=atlas-k6ux81i-shard-0&authSource=admin&retryWrites=true&w=majority';
 
 const HREmployeeSchema = new mongoose.Schema({
   empId:       { type: String, required: true, unique: true },
