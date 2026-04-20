@@ -1,15 +1,14 @@
-import React, { useEffect, useState } from 'react';
-import { db } from '../firebase';
-import { collection, query, onSnapshot, where, orderBy, limit } from 'firebase/firestore';
+import React, { useEffect, useState, useCallback } from 'react';
 import { motion } from 'motion/react';
 import { useAuth } from '../context/AuthContext';
 import {
   Users, Clock, CalendarDays, Ticket, TrendingUp, AlertCircle,
   CheckCircle, Activity, Banknote, Target, ArrowUpRight, UserCheck,
-  Building2, ChevronRight,
+  Building2, ChevronRight, RefreshCw,
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
+import hrmsApi from '../api';
 
 const DEPT_COLORS = [
   'oklch(0.72 0.19 167)', 'oklch(0.75 0.16 240)', 'oklch(0.78 0.17 70)',
@@ -56,18 +55,30 @@ const HRDashboard: React.FC = () => {
   const [employees, setEmployees] = useState<any[]>([]);
   const [leaves, setLeaves] = useState<any[]>([]);
   const [tickets, setTickets] = useState<any[]>([]);
-  const [tasks, setTasks] = useState<any[]>([]);
-  const [recentActivity, setRecentActivity] = useState<any[]>([]);
+  const [stats, setStats] = useState<any>(null);
+  const [fetching, setFetching] = useState(true);
 
-  useEffect(() => {
-    const unsubs = [
-      onSnapshot(query(collection(db, 'employees')), s => setEmployees(s.docs.map(d => ({ id: d.id, ...d.data() })))),
-      onSnapshot(query(collection(db, 'leaves'), where('status', '==', 'pending')), s => setLeaves(s.docs.map(d => ({ id: d.id, ...d.data() })))),
-      onSnapshot(query(collection(db, 'tickets'), where('status', 'in', ['open', 'in_progress'])), s => setTickets(s.docs.map(d => ({ id: d.id, ...d.data() })))),
-      onSnapshot(query(collection(db, 'tasks'), where('status', '!=', 'completed'), limit(5)), s => setTasks(s.docs.map(d => ({ id: d.id, ...d.data() })))),
-    ];
-    return () => unsubs.forEach(u => u());
+  const fetchData = useCallback(async () => {
+    setFetching(true);
+    try {
+      const [empData, leaveData, ticketData, dashStats] = await Promise.all([
+        hrmsApi.employees.list(),
+        hrmsApi.leaves.list({ status: 'pending' }),
+        hrmsApi.tickets.list({ status: 'open' }),
+        hrmsApi.dashboard.stats(),
+      ]);
+      setEmployees(empData.map((e: any) => ({ ...e, id: e._id ?? e.id })));
+      setLeaves(leaveData.map((l: any) => ({ ...l, id: l._id ?? l.id })));
+      setTickets(ticketData.map((t: any) => ({ ...t, id: t._id ?? t.id, title: t.title ?? t.subject })));
+      setStats(dashStats);
+    } catch {
+      // Silently fallback — derived stats will be 0
+    } finally {
+      setFetching(false);
+    }
   }, []);
+
+  useEffect(() => { fetchData(); }, [fetchData]);
 
   // Derived stats
   const active    = employees.filter(e => e.status !== 'terminated').length;
@@ -95,17 +106,22 @@ const HRDashboard: React.FC = () => {
           <h1 className="text-xl font-bold text-white" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>HR Dashboard</h1>
           <p className="text-xs text-[oklch(0.5_0.02_210)] mt-0.5">{format(new Date(), 'EEEE, d MMMM yyyy')} · {active} staff active</p>
         </div>
-        <div className="aq-badge aq-badge-green px-3 py-1.5 text-[10px]">
-          <Activity size={10} /> Live
+        <div className="flex items-center gap-2">
+          <div className="aq-badge aq-badge-green px-3 py-1.5 text-[10px]">
+            <Activity size={10} /> Live
+          </div>
+          <button onClick={fetchData} disabled={fetching} className="aq-btn-ghost !py-1.5 !px-3 !text-xs">
+            <RefreshCw size={13} className={fetching ? 'animate-spin' : ''} />
+          </button>
         </div>
       </div>
 
       {/* KPI Row */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-        <KpiCard label="Total Staff"       value={employees.length} sub={`${active} active`}              icon={Users}        color="oklch(0.72 0.19 167)"  trend="+3 this month" />
-        <KpiCard label="Pending Leaves"    value={leaves.length}    sub="Awaiting approval"               icon={CalendarDays} color="oklch(0.78 0.17 70)" />
-        <KpiCard label="Open Tickets"      value={tickets.length}   sub={`${ticketsByPriority.high} high priority`} icon={Ticket} color="oklch(0.75 0.18 25)" />
-        <KpiCard label="Open Tasks"        value={tasks.length}     sub="Across all teams"                icon={CheckCircle}  color="oklch(0.75 0.16 240)" />
+        <KpiCard label="Total Staff"       value={stats?.totalEmployees ?? employees.length} sub={`${active} active`}              icon={Users}        color="oklch(0.72 0.19 167)"  trend="+3 this month" />
+        <KpiCard label="Pending Leaves"    value={stats?.pendingLeaves ?? leaves.length}    sub="Awaiting approval"               icon={CalendarDays} color="oklch(0.78 0.17 70)" />
+        <KpiCard label="Open Tickets"      value={stats?.openTickets ?? tickets.length}   sub={`${ticketsByPriority.high} high priority`} icon={Ticket} color="oklch(0.75 0.18 25)" />
+        <KpiCard label="Present Today"   value={stats?.presentToday ?? active}     sub="Attendance today"                icon={CheckCircle}  color="oklch(0.75 0.16 240)" />
       </div>
 
       {/* Charts Row */}

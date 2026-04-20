@@ -1,14 +1,13 @@
-import React, { useState, useEffect } from 'react';
-import { db } from '../firebase';
-import { collection, query, onSnapshot, orderBy, addDoc, doc, updateDoc, deleteDoc, Timestamp } from 'firebase/firestore';
+import React, { useState, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { useAuth, ROLE_LABELS, DEPARTMENTS, type EmployeeRole } from '../context/AuthContext';
 import {
   Users, Plus, Search, Edit2, Trash2, X, Save, UserCheck,
-  Mail, Phone, Building2, Calendar, ShieldCheck, ChevronDown,
+  Mail, Phone, Building2, Calendar, ShieldCheck, ChevronDown, RefreshCw,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { format } from 'date-fns';
+import hrmsApi from '../api';
 
 const ROLES: { value: EmployeeRole; label: string }[] = [
   { value: 'super_admin',         label: 'Super Admin' },
@@ -50,14 +49,23 @@ const EmployeeOnboarding: React.FC = () => {
   const [editTarget, setEditTarget] = useState<Employee | null>(null);
   const [form, setForm] = useState(EMPTY_EMP);
   const [saving, setSaving] = useState(false);
+  const [fetching, setFetching] = useState(true);
   const canManage = hasPermission('manage_employees');
 
-  useEffect(() => {
-    const unsub = onSnapshot(query(collection(db, 'employees'), orderBy('name')), snap => {
-      setEmployees(snap.docs.map(d => ({ id: d.id, ...d.data() } as Employee)));
-    });
-    return () => unsub();
+  const fetchEmployees = useCallback(async () => {
+    setFetching(true);
+    try {
+      const data = await hrmsApi.employees.list();
+      const normalised = data.map((e: any) => ({ ...e, id: e._id ?? e.id ?? '', uid: e._id ?? e.uid ?? '' }));
+      setEmployees(normalised);
+    } catch (err: any) {
+      toast.error(err.message ?? 'Failed to load employees');
+    } finally {
+      setFetching(false);
+    }
   }, []);
+
+  useEffect(() => { fetchEmployees(); }, [fetchEmployees]);
 
   const openAdd = () => {
     setEditTarget(null);
@@ -76,19 +84,16 @@ const EmployeeOnboarding: React.FC = () => {
     setSaving(true);
     try {
       if (editTarget) {
-        await updateDoc(doc(db, 'employees', editTarget.id), { ...form, updatedAt: Timestamp.now() });
+        await hrmsApi.employees.update(editTarget.id, form);
         toast.success('Employee record updated!');
       } else {
-        await addDoc(collection(db, 'employees'), {
-          ...form,
-          createdAt: Timestamp.now(),
-          uid: form.email.replace(/[^a-z0-9]/gi, '_'),
-        });
+        await hrmsApi.employees.create(form);
         toast.success(`${form.name} added to the portal!`);
       }
       setShowModal(false);
-    } catch (err) {
-      toast.error('Failed to save employee');
+      await fetchEmployees();
+    } catch (err: any) {
+      toast.error(err.message ?? 'Failed to save employee');
     } finally {
       setSaving(false);
     }
@@ -97,10 +102,11 @@ const EmployeeOnboarding: React.FC = () => {
   const handleDelete = async (emp: Employee) => {
     if (!confirm(`Delete ${emp.name}? This cannot be undone.`)) return;
     try {
-      await deleteDoc(doc(db, 'employees', emp.id));
+      await hrmsApi.employees.remove(emp.id);
       toast.success('Employee removed');
-    } catch {
-      toast.error('Failed to delete');
+      await fetchEmployees();
+    } catch (err: any) {
+      toast.error(err.message ?? 'Failed to delete');
     }
   };
 

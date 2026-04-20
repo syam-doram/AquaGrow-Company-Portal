@@ -1,27 +1,26 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '../context/AuthContext';
-import { db, handleFirestoreError, OperationType } from '../firebase';
-import { collection, addDoc, query, where, onSnapshot, orderBy, limit, updateDoc, doc, Timestamp } from 'firebase/firestore';
 import { motion } from 'motion/react';
-import { Clock, MapPin, CheckCircle, LogOut, History, Calendar, Activity, TimerOff } from 'lucide-react';
+import { Clock, CheckCircle, LogOut, History, Calendar, Activity, TimerOff, RefreshCw, AlertCircle } from 'lucide-react';
 import { format, differenceInMinutes } from 'date-fns';
 import { toast } from 'sonner';
+import hrmsApi from '../api';
 
 interface AttendanceRecord {
-  id: string;
-  employeeId: string;
+  _id: string;
+  empId?: string;
   date: string;
-  checkIn: Timestamp;
-  checkOut?: Timestamp;
+  checkIn: string;   // ISO string
+  checkOut?: string; // ISO string
   status: string;
   workingHours?: number;
 }
 
-const statusColors: Record<string, { bg: string; text: string; dot: string; badge: string }> = {
-  present:  { bg: 'bg-[oklch(0.72_0.19_167/0.08)]', text: 'text-[oklch(0.72_0.19_167)]', dot: 'bg-[oklch(0.72_0.19_167)]', badge: 'aq-badge-green' },
-  absent:   { bg: 'bg-[oklch(0.65_0.22_25/0.08)]',  text: 'text-[oklch(0.75_0.18_25)]',  dot: 'bg-[oklch(0.75_0.18_25)]',  badge: 'aq-badge-red' },
-  late:     { bg: 'bg-[oklch(0.78_0.17_70/0.08)]',  text: 'text-[oklch(0.78_0.17_70)]',  dot: 'bg-[oklch(0.78_0.17_70)]',  badge: 'aq-badge-amber' },
-  half_day: { bg: 'bg-[oklch(0.75_0.16_240/0.08)]', text: 'text-[oklch(0.75_0.16_240)]', dot: 'bg-[oklch(0.75_0.16_240)]', badge: 'aq-badge-blue' },
+const statusColors: Record<string, { badge: string }> = {
+  present:  { badge: 'aq-badge-green' },
+  absent:   { badge: 'aq-badge-red' },
+  late:     { badge: 'aq-badge-amber' },
+  half_day: { badge: 'aq-badge-blue' },
 };
 
 const Attendance: React.FC = () => {
@@ -29,6 +28,7 @@ const Attendance: React.FC = () => {
   const [records, setRecords] = useState<AttendanceRecord[]>([]);
   const [todayRecord, setTodayRecord] = useState<AttendanceRecord | null>(null);
   const [loading, setLoading] = useState(false);
+  const [fetching, setFetching] = useState(true);
   const [now, setNow] = useState(new Date());
   const [filterYear, setFilterYear] = useState<number>(new Date().getFullYear());
   const [filterMonth, setFilterMonth] = useState<number>(new Date().getMonth()); // 0-indexed
@@ -42,88 +42,88 @@ const Attendance: React.FC = () => {
     return () => clearInterval(t);
   }, []);
 
-  // Real-time attendance from Firestore
-  useEffect(() => {
-    if (!employee) return;
-    const q = query(
-      collection(db, 'attendance'),
-      where('employeeId', '==', employee.uid),
-      orderBy('checkIn', 'desc'),
-      limit(20)
-    );
-    const unsub = onSnapshot(q, snap => {
-      const docs = snap.docs.map(d => ({ id: d.id, ...d.data() } as AttendanceRecord));
-      setRecords(docs);
+  // Fetch attendance from HRMS API
+  const fetchAttendance = useCallback(async () => {
+    setFetching(true);
+    try {
+      const month = `${filterYear}-${String(filterMonth + 1).padStart(2, '0')}`;
+      const data = await hrmsApi.attendance.list({ month });
+      setRecords(data);
       const today = format(new Date(), 'yyyy-MM-dd');
-      setTodayRecord(docs.find(r => r.date === today) ?? null);
-    }, err => handleFirestoreError(err, OperationType.LIST, 'attendance'));
-    return () => unsub();
-  }, [employee]);
+      setTodayRecord(data.find((r: AttendanceRecord) => r.date?.startsWith(today)) ?? null);
+    } catch (err: any) {
+      toast.error(err.message ?? 'Failed to load attendance');
+    } finally {
+      setFetching(false);
+    }
+  }, [filterYear, filterMonth]);
+
+  useEffect(() => { fetchAttendance(); }, [fetchAttendance]);
 
   const handleCheckIn = async () => {
-    if (!employee) return;
     setLoading(true);
     try {
-      const n = new Date();
-      await addDoc(collection(db, 'attendance'), {
-        employeeId: employee.uid,
-        date: format(n, 'yyyy-MM-dd'),
-        checkIn: Timestamp.fromDate(n),
-        status: 'present',
-      });
+      await hrmsApi.attendance.checkIn();
       toast.success('✅ Checked in successfully!');
-    } catch {
-      toast.error('Failed to check in, please try again.');
+      await fetchAttendance();
+    } catch (err: any) {
+      toast.error(err.message ?? 'Failed to check in');
     } finally {
       setLoading(false);
     }
   };
 
   const handleCheckOut = async () => {
-    if (!todayRecord) return;
     setLoading(true);
     try {
-      const n = new Date();
-      const mins = differenceInMinutes(n, todayRecord.checkIn.toDate());
-      await updateDoc(doc(db, 'attendance', todayRecord.id), {
-        checkOut: Timestamp.fromDate(n),
-        workingHours: parseFloat((mins / 60).toFixed(2)),
-      });
+      await hrmsApi.attendance.checkOut();
       toast.success('✅ Checked out. Great work today!');
-    } catch {
-      toast.error('Failed to check out.');
+      await fetchAttendance();
+    } catch (err: any) {
+      toast.error(err.message ?? 'Failed to check out');
     } finally {
       setLoading(false);
     }
   };
 
   // Summary stats
-  const presentDays   = records.filter(r => r.status === 'present').length;
-  const totalHours    = records.reduce((s, r) => s + (r.workingHours ?? 0), 0);
-  const avgHours      = records.length ? (totalHours / records.filter(r => r.workingHours).length).toFixed(1) : '0';
+  const presentDays = records.filter(r => r.status === 'present').length;
+  const totalHours  = records.reduce((s, r) => s + (r.workingHours ?? 0), 0);
+  const avgHours    = records.length ? (totalHours / Math.max(records.filter(r => r.workingHours).length, 1)).toFixed(1) : '0';
 
-  // Live elapsed time
+  // Live elapsed time from check-in
   const elapsed = todayRecord && !todayRecord.checkOut
-    ? differenceInMinutes(now, todayRecord.checkIn.toDate())
+    ? differenceInMinutes(now, new Date(todayRecord.checkIn))
     : null;
   const elapsedStr = elapsed != null
     ? `${Math.floor(elapsed / 60)}h ${elapsed % 60}m`
     : null;
 
+  // Filtered records for the selected month
+  const filtered = records.filter(rec => {
+    const d = new Date(rec.date);
+    return d.getFullYear() === filterYear && d.getMonth() === filterMonth;
+  });
+
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div>
-        <h1 className="text-2xl font-bold text-white" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>Attendance</h1>
-        <p className="text-sm text-[oklch(0.5_0.02_210)] mt-0.5">Mark your daily attendance and track work hours.</p>
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-2xl font-bold text-white" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>Attendance</h1>
+          <p className="text-sm text-[oklch(0.5_0.02_210)] mt-0.5">Mark your daily attendance and track work hours.</p>
+        </div>
+        <button onClick={fetchAttendance} disabled={fetching} className="aq-btn-ghost !py-1.5 !px-3 !text-xs">
+          <RefreshCw size={13} className={fetching ? 'animate-spin' : ''} /> Refresh
+        </button>
       </div>
 
       {/* Stats */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         {[
-          { label: 'Present Days',   value: String(presentDays),     icon: CheckCircle, color: 'oklch(0.72 0.19 167)', sub: 'This month' },
-          { label: 'Total Hours',    value: `${totalHours.toFixed(0)}h`,icon: Clock,     color: 'oklch(0.75 0.16 240)', sub: 'Logged so far' },
-          { label: 'Avg Daily Hrs',  value: `${avgHours}h`,          icon: Activity,    color: 'oklch(0.78 0.17 70)',  sub: 'Per working day' },
+          { label: 'Present Days',   value: String(presentDays),            icon: CheckCircle, color: 'oklch(0.72 0.19 167)', sub: 'This month' },
+          { label: 'Total Hours',    value: `${totalHours.toFixed(0)}h`,    icon: Clock,       color: 'oklch(0.75 0.16 240)', sub: 'Logged so far' },
+          { label: 'Avg Daily Hrs',  value: `${avgHours}h`,                 icon: Activity,    color: 'oklch(0.78 0.17 70)',  sub: 'Per working day' },
           { label: 'Attendance Rate',value: `${presentDays > 0 ? Math.round((presentDays / Math.max(records.length, 1)) * 100) : 0}%`,
             icon: Calendar, color: 'oklch(0.78 0.17 295)', sub: 'Current period' },
         ].map((s, i) => (
@@ -152,7 +152,6 @@ const Attendance: React.FC = () => {
               <p className="text-2xl font-bold text-white font-mono">{format(now, 'hh:mm')}</p>
               <p className="text-xs text-[oklch(0.72_0.19_167)] font-semibold">{format(now, 'ss')}s</p>
             </div>
-            {/* Elapsed ring overlay when checked in */}
             {todayRecord && !todayRecord.checkOut && (
               <div className="absolute inset-0 rounded-full border-2 border-[oklch(0.72_0.19_167)] opacity-60 pulse-ring" />
             )}
@@ -167,13 +166,13 @@ const Attendance: React.FC = () => {
           <div className="w-full mt-2">
             {!todayRecord ? (
               <button onClick={handleCheckIn} disabled={loading} className="aq-btn-primary w-full justify-center text-base py-3.5">
-                <Clock size={18} /> Check In
+                <Clock size={18} /> {loading ? 'Checking in…' : 'Check In'}
               </button>
             ) : !todayRecord.checkOut ? (
               <button onClick={handleCheckOut} disabled={loading}
                 className="w-full py-3.5 rounded-xl font-bold text-base flex items-center justify-center gap-2 transition-all"
                 style={{ background: 'oklch(0.65 0.22 25 / 0.15)', color: 'oklch(0.75 0.18 25)', border: '1px solid oklch(0.65 0.22 25 / 0.25)' }}>
-                <LogOut size={18} /> Check Out
+                <LogOut size={18} /> {loading ? 'Checking out…' : 'Check Out'}
               </button>
             ) : (
               <div className="w-full py-3.5 rounded-xl font-semibold text-sm flex items-center justify-center gap-2"
@@ -188,15 +187,19 @@ const Attendance: React.FC = () => {
             <div className="w-full mt-4 space-y-2">
               <div className="flex justify-between py-2" style={{ borderBottom: '1px solid oklch(1 0 0 / 6%)' }}>
                 <span className="text-xs text-[oklch(0.5_0.02_210)]">Check In</span>
-                <span className="text-xs font-bold text-white font-mono">{format(todayRecord.checkIn.toDate(), 'hh:mm a')}</span>
+                <span className="text-xs font-bold text-white font-mono">
+                  {format(new Date(todayRecord.checkIn), 'hh:mm a')}
+                </span>
               </div>
               {todayRecord.checkOut && (
                 <div className="flex justify-between py-2" style={{ borderBottom: '1px solid oklch(1 0 0 / 6%)' }}>
                   <span className="text-xs text-[oklch(0.5_0.02_210)]">Check Out</span>
-                  <span className="text-xs font-bold text-white font-mono">{format(todayRecord.checkOut.toDate(), 'hh:mm a')}</span>
+                  <span className="text-xs font-bold text-white font-mono">
+                    {format(new Date(todayRecord.checkOut), 'hh:mm a')}
+                  </span>
                 </div>
               )}
-              {todayRecord.workingHours && (
+              {todayRecord.workingHours != null && (
                 <div className="flex justify-between py-2">
                   <span className="text-xs text-[oklch(0.5_0.02_210)]">Total Hours</span>
                   <span className="text-xs font-bold text-[oklch(0.72_0.19_167)]">{todayRecord.workingHours}h</span>
@@ -211,7 +214,7 @@ const Attendance: React.FC = () => {
           <div className="p-4 flex flex-wrap items-center gap-3 justify-between" style={{ borderBottom: '1px solid oklch(1 0 0 / 6%)' }}>
             <div>
               <h3 className="text-sm font-bold text-white" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>Attendance History</h3>
-              <p className="text-[10px] text-[oklch(0.5_0.02_210)]">Filter by year &amp; month</p>
+              <p className="text-[10px] text-[oklch(0.5_0.02_210)]">Filter by year & month</p>
             </div>
             {/* Year / Month filters */}
             <div className="flex items-center gap-2">
@@ -225,41 +228,39 @@ const Attendance: React.FC = () => {
               </select>
             </div>
           </div>
-          {(() => {
-            const filtered = records.filter(rec => {
-              const d = new Date(rec.date);
-              return d.getFullYear() === filterYear && d.getMonth() === filterMonth;
-            });
-            return (
-              <div className="overflow-x-auto">
-                <table className="w-full aq-table">
-                  <thead><tr>
-                    <th className="text-left">Date</th>
-                    <th className="text-left">Check In</th>
-                    <th className="text-left">Check Out</th>
-                    <th className="text-left">Hours</th>
-                    <th className="text-left">Status</th>
-                  </tr></thead>
-                  <tbody>
-                    {filtered.map((rec, i) => (
-                      <motion.tr key={rec.id} initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: i * 0.04 }}>
-                        <td className="font-medium text-white">{format(new Date(rec.date), 'MMM dd, yyyy')}</td>
-                        <td className="font-mono">{format(rec.checkIn.toDate(), 'hh:mm a')}</td>
-                        <td className="font-mono">{rec.checkOut ? format(rec.checkOut.toDate(), 'hh:mm a') : <span className="text-[oklch(0.45_0.02_210)]">–</span>}</td>
-                        <td>{rec.workingHours ? <span className="text-[oklch(0.72_0.19_167)] font-bold">{rec.workingHours}h</span> : <span className="text-[oklch(0.45_0.02_210)]">–</span>}</td>
-                        <td><span className={`aq-badge ${statusColors[rec.status]?.badge ?? 'aq-badge-green'}`}>{rec.status.replace('_', ' ')}</span></td>
-                      </motion.tr>
-                    ))}
-                    {filtered.length === 0 && (
-                      <tr><td colSpan={5} className="text-center py-12 text-[oklch(0.45_0.02_210)] text-xs">
-                        No records for {MONTHS_LABEL[filterMonth]} {filterYear}
-                      </td></tr>
-                    )}
-                  </tbody>
-                </table>
+          <div className="overflow-x-auto">
+            {fetching ? (
+              <div className="flex items-center justify-center py-12">
+                <div className="w-6 h-6 border-2 border-[oklch(0.72_0.19_167/0.2)] border-t-[oklch(0.72_0.19_167)] rounded-full animate-spin" />
               </div>
-            );
-          })()}
+            ) : (
+              <table className="w-full aq-table">
+                <thead><tr>
+                  <th className="text-left">Date</th>
+                  <th className="text-left">Check In</th>
+                  <th className="text-left">Check Out</th>
+                  <th className="text-left">Hours</th>
+                  <th className="text-left">Status</th>
+                </tr></thead>
+                <tbody>
+                  {filtered.map((rec, i) => (
+                    <motion.tr key={rec._id} initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: i * 0.04 }}>
+                      <td className="font-medium text-white">{format(new Date(rec.date), 'MMM dd, yyyy')}</td>
+                      <td className="font-mono">{format(new Date(rec.checkIn), 'hh:mm a')}</td>
+                      <td className="font-mono">{rec.checkOut ? format(new Date(rec.checkOut), 'hh:mm a') : <span className="text-[oklch(0.45_0.02_210)]">–</span>}</td>
+                      <td>{rec.workingHours != null ? <span className="text-[oklch(0.72_0.19_167)] font-bold">{rec.workingHours}h</span> : <span className="text-[oklch(0.45_0.02_210)]">–</span>}</td>
+                      <td><span className={`aq-badge ${statusColors[rec.status]?.badge ?? 'aq-badge-green'}`}>{rec.status.replace('_', ' ')}</span></td>
+                    </motion.tr>
+                  ))}
+                  {filtered.length === 0 && (
+                    <tr><td colSpan={5} className="text-center py-12 text-[oklch(0.45_0.02_210)] text-xs">
+                      No records for {MONTHS_LABEL[filterMonth]} {filterYear}
+                    </td></tr>
+                  )}
+                </tbody>
+              </table>
+            )}
+          </div>
         </div>
       </div>
     </div>

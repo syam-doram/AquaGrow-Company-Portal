@@ -1,18 +1,26 @@
-import React, { useState, useEffect } from 'react';
-import { db } from '../firebase';
-import { collection, query, onSnapshot, addDoc, doc, updateDoc, orderBy, Timestamp, where } from 'firebase/firestore';
+import React, { useState, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { useAuth } from '../context/AuthContext';
-import { TrendingUp, Star, Plus, X, Save, Search, User, Award, BarChart2 } from 'lucide-react';
+import { TrendingUp, Star, Plus, X, Save, Search, User, Award, BarChart2, RefreshCw } from 'lucide-react';
 import { toast } from 'sonner';
 import { format } from 'date-fns';
+import hrmsApi from '../api';
 
 interface Review {
-  id: string; employeeId: string; employeeName: string;
-  month: string; year: number; rating: number;
-  kpiScore?: number; notes: string; goals?: string;
-  reviewedBy: string; reviewerName: string;
-  createdAt: Timestamp;
+  id?: string;
+  _id?: string;
+  employeeId?: string;
+  employeeName?: string;
+  month?: string;
+  year?: number;
+  period?: string;
+  rating: number;
+  kpiScore?: number;
+  notes?: string;
+  goals?: string;
+  reviewedBy?: string;
+  reviewerName?: string;
+  createdAt?: string;
 }
 
 const MONTHS = ['January','February','March','April','May','June','July','August','September','October','November','December'];
@@ -43,44 +51,52 @@ const PerformanceReviews: React.FC = () => {
     rating: 3, kpiScore: 80, notes: '', goals: '',
   });
   const [saving, setSaving] = useState(false);
+  const [fetching, setFetching] = useState(true);
   const canManage = hasPermission('manage_performance');
 
-  useEffect(() => {
-    const unsubs = [
-      onSnapshot(query(collection(db, 'performance'), orderBy('createdAt', 'desc')), snap => {
-        setReviews(snap.docs.map(d => ({ id: d.id, ...d.data() } as Review)));
-      }),
-      onSnapshot(query(collection(db, 'employees')), snap => {
-        setEmployees(snap.docs.map(d => ({ id: d.id, ...d.data() })));
-      }),
-    ];
-    return () => unsubs.forEach(u => u());
+  const fetchData = useCallback(async () => {
+    setFetching(true);
+    try {
+      const [revData, empData] = await Promise.all([
+        hrmsApi.performance.list(),
+        hrmsApi.employees.list(),
+      ]);
+      setReviews(revData.map((r: any) => ({ ...r, id: r._id ?? r.id ?? '' })));
+      setEmployees(empData.map((e: any) => ({ ...e, id: e._id ?? e.id ?? '' })));
+    } catch (err: any) {
+      toast.error(err.message ?? 'Failed to load reviews');
+    } finally {
+      setFetching(false);
+    }
   }, []);
+
+  useEffect(() => { fetchData(); }, [fetchData]);
 
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!employee || !form.employeeId) return;
+    if (!form.employeeId) return;
     setSaving(true);
     try {
-      await addDoc(collection(db, 'performance'), {
+      await hrmsApi.performance.create({
         ...form,
-        reviewedBy: employee.uid,
-        reviewerName: employee.name,
-        createdAt: Timestamp.now(),
+        reviewerName: employee?.name,
       });
       toast.success(`Performance review submitted for ${form.employeeName}`);
       setShowModal(false);
-    } catch {
-      toast.error('Failed to submit review');
+      await fetchData();
+    } catch (err: any) {
+      toast.error(err.message ?? 'Failed to submit review');
     } finally {
       setSaving(false);
     }
   };
 
-  const filtered = reviews.filter(r =>
-    (filterYear === 0 || r.year === filterYear) &&
-    (!search || r.employeeName.toLowerCase().includes(search.toLowerCase()))
-  );
+  const filtered = reviews.filter(r => {
+    const matchYear = filterYear === 0 || r.year === filterYear ||
+      (r.period && r.period.includes(String(filterYear)));
+    const matchSearch = !search || (r.employeeName ?? '').toLowerCase().includes(search.toLowerCase());
+    return matchYear && matchSearch;
+  });
 
   const avgRating = reviews.length ? (reviews.reduce((s, r) => s + r.rating, 0) / reviews.length).toFixed(1) : '—';
   const avgKpi    = reviews.filter(r => r.kpiScore != null).length
@@ -139,8 +155,8 @@ const PerformanceReviews: React.FC = () => {
             className="glass-panel p-4">
             <div className="flex items-start justify-between mb-3">
               <div>
-                <p className="text-xs font-bold text-white">{r.employeeName}</p>
-                <p className="text-[10px] text-[oklch(0.5_0.02_210)]">{r.month} {r.year}</p>
+                <p className="text-xs font-bold text-white">{r.employeeName ?? 'Employee'}</p>
+                <p className="text-[10px] text-[oklch(0.5_0.02_210)]">{r.period ?? `${r.month ?? '—'} ${r.year ?? ''}`}</p>
               </div>
               <div className="p-2 rounded-xl" style={{ background: 'oklch(0.78 0.17 70 / 0.1)' }}>
                 <Award size={14} className="text-[oklch(0.78_0.17_70)]" />

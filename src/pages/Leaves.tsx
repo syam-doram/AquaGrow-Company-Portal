@@ -1,20 +1,27 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '../context/AuthContext';
-import { db, handleFirestoreError, OperationType } from '../firebase';
-import { collection, addDoc, query, where, onSnapshot, orderBy, Timestamp } from 'firebase/firestore';
 import { motion, AnimatePresence } from 'motion/react';
 import {
   Calendar, Plus, CheckCircle, XCircle, Clock, X,
   Gift, Umbrella, Briefcase, Star, Info, ChevronLeft, ChevronRight,
-  Sun, Flower2, Flag,
+  Sun, Flower2, Flag, RefreshCw,
 } from 'lucide-react';
 import { format, differenceInCalendarDays, getMonth, getYear, startOfMonth, endOfMonth, eachDayOfInterval, startOfWeek, endOfWeek, isSameMonth, isSameDay, isWeekend } from 'date-fns';
 import { toast } from 'sonner';
+import hrmsApi from '../api';
 
 // ── Types ──────────────────────────────────────────────────────────────────────
 interface LeaveRecord {
-  id: string; employeeId: string; type: string;
-  from: string; to: string; status: string; reason: string; appliedAt: Timestamp;
+  id: string;
+  _id?: string;
+  employeeId?: string;
+  type: string;
+  from: string;
+  to: string;
+  status: string;
+  reason: string;
+  appliedAt?: string | { _seconds?: number; toDate?: () => Date };
+  days?: number;
 }
 
 // ── Corporate Leave Policy ─────────────────────────────────────────────────────
@@ -86,10 +93,20 @@ const monthsAccruedInYear = (year: number) => {
   return getMonth(now) + 1; // Jan=0 → 1 month
 };
 
+// ── Helpers ────────────────────────────────────────────────────────────────────
+const getAppliedDate = (appliedAt: LeaveRecord['appliedAt']) => {
+  if (!appliedAt) return new Date();
+  if (typeof appliedAt === 'string') return new Date(appliedAt);
+  if (typeof appliedAt === 'object' && appliedAt._seconds) return new Date(appliedAt._seconds * 1000);
+  if (typeof appliedAt === 'object' && appliedAt.toDate) return appliedAt.toDate();
+  return new Date();
+};
+
 // ══════════════════════════════════════════════════════════════════════════════
 const Leaves: React.FC = () => {
   const { employee } = useAuth();
   const [leaves, setLeaves]         = useState<LeaveRecord[]>([]);
+  const [fetching, setFetching]     = useState(true);
   const [showModal, setShowModal]   = useState(false);
   const [loading, setLoading]       = useState(false);
   const [leaveType, setLeaveType]   = useState('casual');
@@ -101,34 +118,43 @@ const Leaves: React.FC = () => {
   const [calMonth, setCalMonth]     = useState(new Date());
   const YEARS = [2025, 2026, 2027];
 
-  useEffect(() => {
-    if (!employee) return;
-    const q = query(
-      collection(db, 'leaves'),
-      where('employeeId', '==', employee.uid),
-      orderBy('appliedAt', 'desc')
-    );
-    const unsub = onSnapshot(q, snap => {
-      setLeaves(snap.docs.map(d => ({ id: d.id, ...d.data() } as LeaveRecord)));
-    }, err => handleFirestoreError(err, OperationType.LIST, 'leaves'));
-    return () => unsub();
-  }, [employee]);
+  const fetchLeaves = useCallback(async () => {
+    setFetching(true);
+    try {
+      const data = await hrmsApi.leaves.list();
+      // Normalise id field from either _id or id
+      const normalised = data.map((l: any) => ({ ...l, id: l._id ?? l.id ?? '' }));
+      setLeaves(normalised);
+    } catch (err: any) {
+      toast.error(err.message ?? 'Failed to load leaves');
+    } finally {
+      setFetching(false);
+    }
+  }, []);
+
+  useEffect(() => { fetchLeaves(); }, [fetchLeaves]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!employee || !fromDate || !toDate) return;
+    if (!fromDate || !toDate) return;
     setLoading(true);
     try {
-      await addDoc(collection(db, 'leaves'), {
-        employeeId: employee.uid, type: leaveType,
-        from: fromDate, to: toDate, status: 'pending', reason,
-        appliedAt: Timestamp.now(),
+      await hrmsApi.leaves.apply({
+        type: leaveType,
+        from: fromDate,
+        to: toDate,
+        days: Math.max(1, differenceInCalendarDays(new Date(toDate), new Date(fromDate)) + 1),
+        reason,
       });
       toast.success('Leave application submitted!');
       setShowModal(false);
       setFromDate(''); setToDate(''); setReason('');
-    } catch { toast.error('Failed to submit application'); }
-    finally { setLoading(false); }
+      await fetchLeaves();
+    } catch (err: any) {
+      toast.error(err.message ?? 'Failed to submit application');
+    } finally {
+      setLoading(false);
+    }
   };
 
   // Calculated leave stats

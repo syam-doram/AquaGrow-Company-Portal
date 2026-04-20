@@ -1,19 +1,18 @@
-import React, { useState, useEffect } from 'react';
-import { db } from '../firebase';
-import { collection, query, onSnapshot, doc, updateDoc, Timestamp, where, orderBy } from 'firebase/firestore';
+import React, { useState, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { useAuth } from '../context/AuthContext';
 import {
-  CalendarDays, CheckCircle, XCircle, Clock, Search, MessageCircle, X,
+  CalendarDays, CheckCircle, XCircle, Clock, Search, MessageCircle, X, RefreshCw,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { format, differenceInCalendarDays } from 'date-fns';
+import hrmsApi from '../api';
 
 interface LeaveRecord {
-  id: string; employeeId: string; employeeName?: string;
+  id: string; _id?: string; employeeId?: string; employeeName?: string;
   type: string; from: string; to: string;
   status: 'pending' | 'approved' | 'rejected';
-  reason: string; appliedAt: Timestamp;
+  reason: string; appliedAt?: string;
   approvedBy?: string; approverComment?: string;
 }
 
@@ -32,33 +31,35 @@ const LeaveApproval: React.FC = () => {
   const [selected, setSelected] = useState<LeaveRecord | null>(null);
   const [comment, setComment] = useState('');
   const [processing, setProcessing] = useState(false);
+  const [fetching, setFetching] = useState(true);
   const canApprove = hasPermission('approve_leaves');
 
-  useEffect(() => {
-    const q = query(collection(db, 'leaves'), orderBy('appliedAt', 'desc'));
-    const unsub = onSnapshot(q, snap => {
-      const docs = snap.docs.map(d => ({ id: d.id, ...d.data() } as LeaveRecord));
-      setLeaves(docs);
-    });
-    return () => unsub();
+  const fetchLeaves = useCallback(async () => {
+    setFetching(true);
+    try {
+      const data = await hrmsApi.leaves.list();
+      const normalised = data.map((l: any) => ({ ...l, id: l._id ?? l.id ?? '' }));
+      setLeaves(normalised);
+    } catch (err: any) {
+      toast.error(err.message ?? 'Failed to load leaves');
+    } finally {
+      setFetching(false);
+    }
   }, []);
 
+  useEffect(() => { fetchLeaves(); }, [fetchLeaves]);
+
   const handleDecision = async (leaveId: string, decision: 'approved' | 'rejected') => {
-    if (!employee) return;
     setProcessing(true);
     try {
-      await updateDoc(doc(db, 'leaves', leaveId), {
-        status: decision,
-        approvedBy: employee.uid,
-        approverName: employee.name,
-        approverComment: comment,
-        decidedAt: Timestamp.now(),
-      });
+      await hrmsApi.leaves.update(leaveId, { status: decision, comment });
+      if (comment) await hrmsApi.leaves.comment(leaveId, comment);
       toast.success(`Leave ${decision} successfully!`);
       setSelected(null);
       setComment('');
-    } catch {
-      toast.error('Failed to update leave');
+      await fetchLeaves();
+    } catch (err: any) {
+      toast.error(err.message ?? 'Failed to update leave');
     } finally {
       setProcessing(false);
     }

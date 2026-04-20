@@ -1,12 +1,11 @@
-import React, { useState, useEffect } from 'react';
-import { db } from '../firebase';
-import { collection, query, onSnapshot, orderBy } from 'firebase/firestore';
+import React, { useState, useEffect, useCallback } from 'react';
 import { motion } from 'motion/react';
 import {
   Users, FileDown, TrendingUp, Calendar, Search,
-  ShieldCheck, BarChart3, Activity, Download,
+  ShieldCheck, BarChart3, Activity, Download, RefreshCw,
 } from 'lucide-react';
 import { toast } from 'sonner';
+import hrmsApi from '../api';
 
 const ROLE_COLORS: Record<string, string> = {
   admin:    'aq-badge-green',
@@ -19,14 +18,19 @@ const AdminReports: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
 
-  useEffect(() => {
-    const q = query(collection(db, 'employees'), orderBy('name'));
-    const unsub = onSnapshot(q, snap => {
-      setEmployees(snap.docs.map(d => ({ id: d.id, ...d.data() })));
+  const fetchEmployees = useCallback(async () => {
+    setLoading(true);
+    try {
+      const data = await hrmsApi.employees.list();
+      setEmployees(data.map((e: any) => ({ ...e, id: e._id ?? e.id })));
+    } catch (err: any) {
+      toast.error(err.message ?? 'Failed to load employees');
+    } finally {
       setLoading(false);
-    });
-    return () => unsub();
+    }
   }, []);
+
+  useEffect(() => { fetchEmployees(); }, [fetchEmployees]);
 
   const exportReport = (type: string) => {
     toast.info(`Generating ${type} report…`);
