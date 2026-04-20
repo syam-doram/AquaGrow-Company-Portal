@@ -332,7 +332,7 @@ const Leaves: React.FC = () => {
                   </div>
                   <div className="text-right shrink-0 hidden sm:block">
                     <p className="text-[10px]" style={{ color: 'var(--aq-text-faint)' }}>Applied</p>
-                    <p className="text-xs font-medium" style={{ color: 'var(--aq-text-primary)' }}>{format(leave.appliedAt.toDate(), 'MMM dd')}</p>
+                    <p className="text-xs font-medium" style={{ color: 'var(--aq-text-primary)' }}>{leave.appliedAt ? format(getAppliedDate(leave.appliedAt), 'MMM dd') : '—'}</p>
                   </div>
                 </motion.div>
               );

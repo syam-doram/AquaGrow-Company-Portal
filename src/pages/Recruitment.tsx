@@ -528,7 +528,7 @@ const Recruitment: React.FC = () => {
                   { icon: Mail,   val: selectedCand.email },
                   { icon: Phone,  val: selectedCand.phone },
                   { icon: Layers, val: `Source: ${selectedCand.source}` },
-                  { icon: CalendarDays, val: `Applied: ${format(selectedCand.createdAt.toDate(), 'MMM dd, yyyy')}` },
+                  { icon: CalendarDays, val: `Applied: ${selectedCand.createdAt ? format(new Date(selectedCand.createdAt), 'MMM dd, yyyy') : '—'}` },
                 ].map((row, i) => {
                   const Icon = row.icon;
                   return (
