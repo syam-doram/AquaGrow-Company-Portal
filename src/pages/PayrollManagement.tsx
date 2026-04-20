@@ -109,9 +109,10 @@ const PayrollManagement: React.FC = () => {
   };
 
   const filtered = payrolls.filter(p =>
-    (filterYear === 0 || p.year === filterYear) &&
-    (!search || p.employeeName.toLowerCase().includes(search.toLowerCase()) ||
-    p.month.toLowerCase().includes(search.toLowerCase()))
+    (filterYear === 0 || p.year === filterYear || (p.month ?? '').includes(String(filterYear))) &&
+    (!search ||
+      (p.employeeName ?? '').toLowerCase().includes(search.toLowerCase()) ||
+      (p.month ?? '').toLowerCase().includes(search.toLowerCase()))
   );
 
   // Summary stats

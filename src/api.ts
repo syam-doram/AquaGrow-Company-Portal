@@ -164,6 +164,71 @@ export const hrmsApi = {
     list:     () => get<any[]>('/notifications'),
     markRead: () => patch('/notifications/mark-read'),
   },
+
+  // ════════════════════════════════════════════════════════════════════════════
+  //  FULL & FINAL SETTLEMENT
+  // ════════════════════════════════════════════════════════════════════════════
+  fnf: {
+    /** List all F&F settlements (HR/Finance view) */
+    list: (params?: { status?: string; empId?: string }) => {
+      const q = params ? '?' + new URLSearchParams(params as any).toString() : '';
+      return get<any[]>(`/fnf${q}`);
+    },
+    /** Get a specific F&F record */
+    get: (id: string) => get<any>(`/fnf/${id}`),
+    /** Initiate a new F&F for an employee (marks them as resigned/terminated) */
+    create: (data: {
+      employeeId: string;
+      separationType: 'resignation' | 'termination' | 'retirement' | 'voluntary';
+      lastWorkingDay: string;
+      noticePeriodDays?: number;
+      noticePeriodServed?: boolean;
+      notes?: string;
+    }) => post<any>('/fnf', data),
+    /** Update settlement amounts / status */
+    update: (id: string, data: {
+      status?: string;
+      gratuityAmount?: number;
+      leaveEncashment?: number;
+      noticePayDeduction?: number;
+      bonusAmount?: number;
+      otherDeductions?: number;
+      otherEarnings?: number;
+      settledAt?: string;
+      hrNotes?: string;
+    }) => put<any>(`/fnf/${id}`, data),
+    /** HR/Finance approval */
+    approve: (id: string) => patch<any>(`/fnf/${id}/approve`),
+    /** Mark as settled/disbursed */
+    disburse: (id: string, data: { paymentMode: string; transactionRef?: string }) =>
+      patch<any>(`/fnf/${id}/disburse`, data),
+  },
+  // ════════════════════════════════════════════════════════════════════════════
+  //  ADMIN USERS (create admin panel accounts from HRMS hires)
+  // ════════════════════════════════════════════════════════════════════════════
+  adminUsers: {
+    /**
+     * Provisions a new Admin Panel user.
+     * Calls POST /api/admin/staff on the shared AquaGrow backend.
+     * This makes the new hire immediately login-able on the admin panel.
+     */
+    create: (data: {
+      name: string;
+      phoneNumber: string;
+      password: string;
+      role: string;     // e.g. 'hr_admin', 'finance_admin', 'operations_admin' etc.
+      email?: string;
+      location?: string;
+    }) =>
+      apiFetch<any>('/admin/staff', {
+        method: 'POST',
+        body: JSON.stringify(data),
+      }),
+    list: () => apiFetch<any[]>('/admin/staff'),
+    update: (id: string, data: { role?: string; isActive?: boolean; name?: string; email?: string }) =>
+      apiFetch<any>(`/admin/staff/${id}`, { method: 'PATCH', body: JSON.stringify(data) }),
+    remove: (id: string) => apiFetch<any>(`/admin/staff/${id}`, { method: 'DELETE' }),
+  },
 };
 
 export default hrmsApi;

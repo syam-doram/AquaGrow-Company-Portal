@@ -20,6 +20,7 @@ import LeaveApproval from './pages/LeaveApproval';
 import TicketSystem from './pages/TicketSystem';
 import PerformanceReviews from './pages/PerformanceReviews';
 import AdminReports from './pages/AdminReports';
+import FullFinalSettlement from './pages/FullFinalSettlement';
 
 import { Toaster } from './components/ui/sonner';
 import { motion, AnimatePresence } from 'motion/react';
@@ -251,8 +252,9 @@ const AppContent: React.FC = () => {
       case 'att-admin':     return hasPermission('manage_attendance') ? <Attendance /> : <Attendance />;
 
       // ── Finance & Payroll ─────────────────────────────────────────────
-      case 'payroll':    return hasPermission('view_payroll') ? <PayrollManagement /> : <Payslips />;
-      case 'reports':    return hasPermission('view_finance') ? <AdminReports /> : <Dashboard />;
+      case 'payroll':       return hasPermission('view_payroll') ? <PayrollManagement /> : <Payslips />;
+      case 'reports':       return hasPermission('view_finance') ? <AdminReports /> : <Dashboard />;
+      case 'ff-settlement': return (hasRole('hr_manager') || hasRole('super_admin') || hasRole('finance_manager')) ? <FullFinalSettlement /> : <Dashboard />;
 
       // ── Support ───────────────────────────────────────────────────────
       case 'tickets-admin': return hasPermission('manage_tickets') ? <TicketSystem admin={true} /> : <TicketSystem admin={false} />;

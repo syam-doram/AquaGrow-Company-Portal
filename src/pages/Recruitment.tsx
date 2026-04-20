@@ -1,9 +1,4 @@
-import React, { useState, useEffect } from 'react';
-import { db } from '../firebase';
-import {
-  collection, query, onSnapshot, addDoc, doc, updateDoc, deleteDoc,
-  orderBy, Timestamp,
-} from 'firebase/firestore';
+import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { useAuth, DEPARTMENTS, type EmployeeRole } from '../context/AuthContext';
 import {
@@ -14,6 +9,7 @@ import {
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { format } from 'date-fns';
+import hrmsApi from '../api';
 
 // ── Types ──────────────────────────────────────────────────────────────────────
 interface Job {
@@ -26,7 +22,7 @@ interface Job {
   location: string;
   openings: number;
   status: 'open' | 'closed' | 'paused';
-  createdAt: Timestamp;
+  createdAt: string;
 }
 
 type CandidateStatus = 'applied' | 'shortlisted' | 'interviewed' | 'selected' | 'rejected' | 'offered';
@@ -45,7 +41,7 @@ interface Candidate {
   offeredSalary?: number;
   joiningDate?: string;
   offerStatus?: 'pending' | 'accepted' | 'declined';
-  createdAt: Timestamp;
+  createdAt: string;
 }
 
 // ── Config ─────────────────────────────────────────────────────────────────────
@@ -71,7 +67,7 @@ const stageCfg = (status: CandidateStatus) =>
 
 const EMPTY_JOB = {
   role: '', department: '', skills: '', salaryMin: 0, salaryMax: 0,
-  location: 'Chennai, TN', openings: 1, status: 'open' as const,
+  location: 'Nellore, AP', openings: 1, status: 'open' as const,
 };
 const EMPTY_CANDIDATE = {
   jobId: '', jobRole: '', name: '', email: '', phone: '',
@@ -83,9 +79,9 @@ const Recruitment: React.FC = () => {
   const { hasPermission } = useAuth();
   const canManage = hasPermission('manage_employees');
 
-  const [jobs, setJobs]           = useState<Job[]>([]);
-  const [candidates, setCandidates] = useState<Candidate[]>([]);
-  const [activeTab, setActiveTab] = useState<'pipeline' | 'jobs' | 'offers'>('pipeline');
+  const [jobs, setJobs]               = useState<Job[]>([]);
+  const [candidates, setCandidates]   = useState<Candidate[]>([]);
+  const [activeTab, setActiveTab]     = useState<'pipeline' | 'jobs' | 'offers'>('pipeline');
 
   // Modals
   const [showJobModal, setShowJobModal]       = useState(false);
@@ -96,25 +92,14 @@ const Recruitment: React.FC = () => {
   const [search, setSearch]                   = useState('');
 
   // Forms
-  const [jobForm, setJobForm]   = useState(EMPTY_JOB);
-  const [candForm, setCandForm] = useState(EMPTY_CANDIDATE);
+  const [jobForm, setJobForm]     = useState(EMPTY_JOB);
+  const [candForm, setCandForm]   = useState(EMPTY_CANDIDATE);
   const [offerForm, setOfferForm] = useState({ offeredSalary: 0, joiningDate: '' });
-  const [saving, setSaving] = useState(false);
+  const [saving, setSaving]       = useState(false);
 
-  // ── Live data ────────────────────────────────────────────────────────────────
-  useEffect(() => {
-    const u1 = onSnapshot(query(collection(db, 'recruitment_jobs'), orderBy('createdAt', 'desc')), snap => {
-      setJobs(snap.docs.map(d => ({ id: d.id, ...d.data() } as Job)));
-    });
-    const u2 = onSnapshot(query(collection(db, 'candidates'), orderBy('createdAt', 'desc')), snap => {
-      setCandidates(snap.docs.map(d => ({ id: d.id, ...d.data() } as Candidate)));
-    });
-    return () => { u1(); u2(); };
-  }, []);
-
-  // ── Derived ──────────────────────────────────────────────────────────────────
+  // ── Derived ─────────────────────────────────────────────────────────────────
   const filteredCands = candidates.filter(c => {
-    const matchJob  = selectedJob === 'all' || c.jobId === selectedJob;
+    const matchJob    = selectedJob === 'all' || c.jobId === selectedJob;
     const matchSearch = !search || c.name.toLowerCase().includes(search.toLowerCase()) ||
       c.email.toLowerCase().includes(search.toLowerCase()) || c.jobRole.toLowerCase().includes(search.toLowerCase());
     return matchJob && matchSearch;
@@ -124,7 +109,12 @@ const Recruitment: React.FC = () => {
   const saveJob = async (e: React.FormEvent) => {
     e.preventDefault(); setSaving(true);
     try {
-      await addDoc(collection(db, 'recruitment_jobs'), { ...jobForm, createdAt: Timestamp.now() });
+      const newJob: Job = {
+        ...jobForm,
+        id: `job_${Date.now()}`,
+        createdAt: new Date().toISOString(),
+      };
+      setJobs(prev => [newJob, ...prev]);
       toast.success(`Job posted: ${jobForm.role}`);
       setShowJobModal(false); setJobForm(EMPTY_JOB);
     } catch { toast.error('Failed to post job'); }
@@ -135,64 +125,76 @@ const Recruitment: React.FC = () => {
     e.preventDefault(); setSaving(true);
     try {
       const job = jobs.find(j => j.id === candForm.jobId);
-      await addDoc(collection(db, 'candidates'), {
+      const newCand: Candidate = {
         ...candForm,
+        id: `cand_${Date.now()}`,
         jobRole: job?.role ?? candForm.jobRole,
         status: 'applied',
-        createdAt: Timestamp.now(),
-      });
+        createdAt: new Date().toISOString(),
+      };
+      setCandidates(prev => [newCand, ...prev]);
       toast.success(`${candForm.name} added to pipeline!`);
       setShowCandModal(false); setCandForm(EMPTY_CANDIDATE);
     } catch { toast.error('Failed to add candidate'); }
     finally { setSaving(false); }
   };
 
-  const moveStage = async (cand: Candidate, status: CandidateStatus) => {
-    await updateDoc(doc(db, 'candidates', cand.id), { status, updatedAt: Timestamp.now() });
-    toast.success(`${cand.name} → ${stageCfg(status).label}`);
+  const moveStage = (cand: Candidate, newStatus: CandidateStatus) => {
+    setCandidates(prev => prev.map(c => c.id === cand.id ? { ...c, status: newStatus } : c));
+    if (selectedCand?.id === cand.id) setSelectedCand(prev => prev ? { ...prev, status: newStatus } : null);
+    toast.success(`${cand.name} → ${stageCfg(newStatus).label}`);
   };
 
   const sendOffer = async (e: React.FormEvent) => {
     e.preventDefault(); if (!selectedCand) return; setSaving(true);
     try {
-      await updateDoc(doc(db, 'candidates', selectedCand.id), {
-        status: 'offered',
+      setCandidates(prev => prev.map(c => c.id === selectedCand.id ? {
+        ...c, status: 'offered',
         offeredSalary: offerForm.offeredSalary,
         joiningDate: offerForm.joiningDate,
         offerStatus: 'pending',
-        offerSentAt: Timestamp.now(),
-      });
+      } : c));
       toast.success(`Offer sent to ${selectedCand.name}!`);
       setShowOfferModal(false); setSelectedCand(null);
     } catch { toast.error('Failed to send offer'); }
     finally { setSaving(false); }
   };
 
+  /** Convert an accepted candidate to an HRMS employee via API */
   const convertToEmployee = async (cand: Candidate) => {
     if (!cand.offeredSalary || !cand.joiningDate) {
       toast.error('Send offer first with salary & joining date'); return;
     }
     try {
-      await addDoc(collection(db, 'employees'), {
-        name: cand.name, email: cand.email, phone: cand.phone,
+      const job = jobs.find(j => j.id === cand.jobId);
+      await hrmsApi.employees.create({
+        name: cand.name,
+        email: cand.email,
+        phone: cand.phone,
         role: 'employee' as EmployeeRole,
-        department: jobs.find(j => j.id === cand.jobId)?.department ?? '',
+        department: job?.department ?? '',
         salary: cand.offeredSalary,
         joiningDate: cand.joiningDate,
-        status: 'pending',         // Will be activated in onboarding
+        status: 'active',
         empId: `AQ-${Date.now().toString().slice(-5)}`,
-        createdAt: Timestamp.now(),
-        uid: cand.email.replace(/[^a-z0-9]/gi, '_'),
       });
-      await updateDoc(doc(db, 'candidates', cand.id), { status: 'selected', convertedToEmployee: true });
-      toast.success(`✅ ${cand.name} moved to Employee Onboarding!`);
-    } catch { toast.error('Failed to convert candidate'); }
+      setCandidates(prev => prev.map(c => c.id === cand.id ? { ...c, status: 'selected' } : c));
+      toast.success(`✅ ${cand.name} onboarded as Employee!`);
+    } catch (err: any) {
+      toast.error(err.message ?? 'Failed to onboard employee');
+    }
   };
 
-  const deleteJob = async (id: string) => {
+  const deleteJob = (id: string) => {
     if (!confirm('Delete this job posting?')) return;
-    await deleteDoc(doc(db, 'recruitment_jobs', id));
+    setJobs(prev => prev.filter(j => j.id !== id));
     toast.success('Job deleted');
+  };
+
+  const updateOfferStatus = (candId: string, offerStatus: 'accepted' | 'declined') => {
+    setCandidates(prev => prev.map(c => c.id === candId
+      ? { ...c, offerStatus, ...(offerStatus === 'declined' ? { status: 'rejected' as CandidateStatus } : {}) }
+      : c));
   };
 
   // ── Render ───────────────────────────────────────────────────────────────────
@@ -420,12 +422,12 @@ const Recruitment: React.FC = () => {
               )}
               {canManage && cand.offerStatus === 'pending' && (
                 <div className="flex gap-2 shrink-0">
-                  <button onClick={() => updateDoc(doc(db, 'candidates', cand.id), { offerStatus: 'accepted' })}
+                  <button onClick={() => updateOfferStatus(cand.id, 'accepted')}
                     className="px-2 py-1 rounded-lg text-[9px] font-bold"
                     style={{ background: 'oklch(0.72 0.19 167 / 0.1)', color: 'oklch(0.72 0.19 167)', border: '1px solid oklch(0.72 0.19 167 / 0.2)' }}>
                     Mark Accepted
                   </button>
-                  <button onClick={() => updateDoc(doc(db, 'candidates', cand.id), { offerStatus: 'declined', status: 'rejected' })}
+                  <button onClick={() => updateOfferStatus(cand.id, 'declined')}
                     className="px-2 py-1 rounded-lg text-[9px] font-bold"
                     style={{ background: 'oklch(0.65 0.22 25 / 0.1)', color: 'oklch(0.75 0.18 25)', border: '1px solid oklch(0.65 0.22 25 / 0.2)' }}>
                     Declined
