@@ -49,7 +49,7 @@ const ALL_NAV_GROUPS: { group: string; items: NavItem[] }[] = [
   {
     group: 'My Workspace',
     items: [
-      { id: 'attendance',   label: 'Attendance',    sub: 'Check in / Check out',    icon: Clock },
+      { id: 'attendance',   label: 'Timesheet',     sub: 'Log daily hours',         icon: Clock },
       { id: 'leaves',       label: 'My Leaves',     sub: 'Apply & track requests',  icon: CalendarDays },
       { id: 'payslips',     label: 'Payslips',      sub: 'Salary history',          icon: CreditCard },
       { id: 'courses',      label: 'Courses',       sub: 'Learning & training',     icon: BookOpen },
@@ -63,7 +63,7 @@ const ALL_NAV_GROUPS: { group: string; items: NavItem[] }[] = [
       { id: 'recruitment',  label: 'Recruitment',   sub: 'Hire & onboard talent',   icon: UserPlus,    roles: ['super_admin','hr_manager'], isNew: true },
       { id: 'employees',    label: 'Employees',     sub: 'Team directory',          icon: Users,       roles: ['super_admin','hr_manager','operations_manager'] },
       { id: 'leave-admin',  label: 'Leave Approvals', sub: 'Approve requests',     icon: CalendarDays,roles: ['super_admin','hr_manager','operations_manager'] },
-      { id: 'att-admin',    label: 'Attendance Admin', sub: 'Full team records',   icon: Clock,       roles: ['super_admin','hr_manager','operations_manager'] },
+      { id: 'att-admin',    label: 'Timesheet Admin', sub: 'Full team records',   icon: Clock,       roles: ['super_admin','hr_manager','operations_manager'] },
       { id: 'performance',  label: 'Performance',   sub: 'Reviews & ratings',      icon: TrendingUp,  roles: ['super_admin','hr_manager','operations_manager'] },
       { id: 'documents',    label: 'Documents',     sub: 'Vault & verification',   icon: FileText,    roles: ['super_admin','hr_manager'] },
       { id: 'assets',       label: 'Assets',        sub: 'Company equipment',      icon: Package,     roles: ['super_admin','hr_manager','operations_manager'] },
