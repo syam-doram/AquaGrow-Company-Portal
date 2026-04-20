@@ -1,14 +1,13 @@
-import React, { useState, useEffect } from 'react';
-import { db } from '../firebase';
-import { collection, query, onSnapshot, addDoc, doc, updateDoc, where, orderBy, Timestamp } from 'firebase/firestore';
+import React, { useState, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { useAuth } from '../context/AuthContext';
 import {
   Banknote, Play, CheckCircle, Download, Plus, X, Search,
-  Calculator, Clock, AlertCircle, ChevronRight, FileText
+  Calculator, Clock, AlertCircle, ChevronRight, FileText, RefreshCw
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { format } from 'date-fns';
+import hrmsApi from '../api';
 
 interface SalaryStructure {
   id: string; name: string; basic: number; hra: number;
@@ -16,11 +15,20 @@ interface SalaryStructure {
 }
 
 interface PayrollRecord {
-  id: string; employeeId: string; employeeName: string;
-  month: string; year: number; grossSalary: number;
-  deductions: number; netSalary: number;
+  id?: string;
+  _id?: string;
+  employeeId?: string;
+  employeeName?: string;
+  month: string;
+  year?: number;
+  grossSalary?: number;
+  deductions?: number;
+  netSalary?: number;
+  salary?: number;
   status: 'draft' | 'pending_approval' | 'approved' | 'paid';
-  createdAt: Timestamp; approvedBy?: string;
+  createdAt?: string;
+  approvedBy?: string;
+  paidAt?: string;
 }
 
 const MONTHS = ['January','February','March','April','May','June','July','August','September','October','November','December'];
@@ -34,87 +42,77 @@ const PayrollManagement: React.FC = () => {
   const [selYear, setSelYear] = useState(new Date().getFullYear());
   const [running, setRunning] = useState(false);
   const [search, setSearch] = useState('');
+  const [filterYear, setFilterYear] = useState(new Date().getFullYear());
+  const [fetching, setFetching] = useState(true);
+  const YEARS = [2024, 2025, 2026, 2027];
   const canRun     = hasPermission('run_payroll');
   const canApprove = hasPermission('approve_payroll');
 
-  useEffect(() => {
-    const unsubs = [
-      onSnapshot(query(collection(db, 'payrolls'), orderBy('createdAt', 'desc')), snap => {
-        setPayrolls(snap.docs.map(d => ({ id: d.id, ...d.data() } as PayrollRecord)));
-      }),
-      onSnapshot(query(collection(db, 'employees'), where('status', '!=', 'terminated')), snap => {
-        setEmployees(snap.docs.map(d => ({ id: d.id, ...d.data() })));
-      }),
-    ];
-    return () => unsubs.forEach(u => u());
+  const fetchPayroll = useCallback(async () => {
+    setFetching(true);
+    try {
+      const [payrollData, empData] = await Promise.all([
+        hrmsApi.payroll.list(),
+        hrmsApi.employees.list(),
+      ]);
+      const normPayroll = payrollData.map((p: any) => ({ ...p, id: p._id ?? p.id ?? '' }));
+      const normEmp     = empData.map((e: any) => ({ ...e, id: e._id ?? e.id ?? '' }));
+      setPayrolls(normPayroll);
+      setEmployees(normEmp);
+    } catch (err: any) {
+      toast.error(err.message ?? 'Failed to load payroll');
+    } finally {
+      setFetching(false);
+    }
   }, []);
 
+  useEffect(() => { fetchPayroll(); }, [fetchPayroll]);
+
   const runPayroll = async () => {
-    if (employees.length === 0) { toast.error('No active employees found'); return; }
     setRunning(true);
     try {
-      const existing = payrolls.filter(p => p.month === selMonth && p.year === selYear);
-      if (existing.length > 0) {
-        toast.warning(`Payroll for ${selMonth} ${selYear} already exists!`);
-        setShowRun(false);
-        setRunning(false);
-        return;
-      }
-      const promises = employees.map(emp => {
-        const salary = emp.salary ?? 30000;
-        const basic  = Math.round(salary * 0.5);
-        const hra    = Math.round(salary * 0.2);
-        const allow  = Math.round(salary * 0.15);
-        const deduct = Math.round(salary * 0.12);
-        const net    = salary - deduct;
-        return addDoc(collection(db, 'payrolls'), {
-          employeeId: emp.uid ?? emp.id,
-          employeeName: emp.name,
-          employeeEmail: emp.email,
-          department: emp.department ?? '',
-          month: selMonth, year: selYear,
-          grossSalary: salary, basic, hra, allowances: allow,
-          deductions: deduct, netSalary: net,
-          status: 'pending_approval',
-          createdAt: Timestamp.now(),
-          createdBy: employee?.uid,
-        });
-      });
-      await Promise.all(promises);
-      toast.success(`✅ Payroll generated for ${employees.length} employees — ${selMonth} ${selYear}`);
+      const monthStr = `${selYear}-${String(MONTHS.indexOf(selMonth) + 1).padStart(2, '0')}`;
+      await hrmsApi.payroll.bulkGenerate(monthStr);
+      toast.success(`✅ Payroll generated for ${selMonth} ${selYear}`);
       setShowRun(false);
-    } catch {
-      toast.error('Failed to run payroll');
+      await fetchPayroll();
+    } catch (err: any) {
+      toast.error(err.message ?? 'Failed to run payroll');
     } finally {
       setRunning(false);
     }
   };
 
   const approvePayroll = async (id: string) => {
-    await updateDoc(doc(db, 'payrolls', id), {
-      status: 'approved',
-      approvedBy: employee?.uid,
-      approvedAt: Timestamp.now(),
-    });
-    toast.success('Payroll approved!');
+    try {
+      await hrmsApi.payroll.update(id, { status: 'approved' });
+      toast.success('Payroll approved!');
+      await fetchPayroll();
+    } catch (err: any) {
+      toast.error(err.message ?? 'Failed to approve');
+    }
   };
 
   const markPaid = async (id: string) => {
-    await updateDoc(doc(db, 'payrolls', id), {
-      status: 'paid',
-      paidAt: Timestamp.now(),
-    });
-    toast.success('Marked as paid. Payslip will be generated.');
+    try {
+      await hrmsApi.payroll.update(id, { status: 'paid' });
+      toast.success('Marked as paid. Payslip will be generated.');
+      await fetchPayroll();
+    } catch (err: any) {
+      toast.error(err.message ?? 'Failed to mark paid');
+    }
   };
 
   const downloadPayslip = (p: PayrollRecord) => {
-    toast.info(`Generating payslip for ${p.employeeName} — ${p.month} ${p.year}…`);
-    setTimeout(() => toast.success(`✅ Payslip for ${p.employeeName} downloaded!`), 1500);
+    toast.info(`Generating payslip for ${p.employeeName} — ${p.month}…`);
+    setTimeout(() => toast.success(`✅ Payslip downloaded!`), 1500);
   };
 
   const filtered = payrolls.filter(p =>
-    !search || p.employeeName.toLowerCase().includes(search.toLowerCase()) ||
-    p.month.toLowerCase().includes(search.toLowerCase())
+    (filterYear === 0 || p.year === filterYear || (p.month ?? '').includes(String(filterYear))) &&
+    (!search ||
+      (p.employeeName ?? '').toLowerCase().includes(search.toLowerCase()) ||
+      (p.month ?? '').toLowerCase().includes(search.toLowerCase()))
   );
 
   // Summary stats
@@ -169,6 +167,11 @@ const PayrollManagement: React.FC = () => {
           <input value={search} onChange={e => setSearch(e.target.value)}
             placeholder="Search employee or month…" className="aq-input pl-8 !py-1.5 !text-xs" />
         </div>
+        <select value={filterYear} onChange={e => setFilterYear(Number(e.target.value))}
+          className="aq-input !py-1.5 !text-xs !w-auto">
+          <option value={0}>All Years</option>
+          {YEARS.map(y => <option key={y}>{y}</option>)}
+        </select>
       </div>
 
       {/* Payroll Table */}

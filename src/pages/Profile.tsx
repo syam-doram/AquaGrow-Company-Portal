@@ -1,14 +1,14 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
-import { db } from '../firebase';
-import { doc, updateDoc } from 'firebase/firestore';
 import { motion } from 'motion/react';
 import {
   Camera, Mail, Phone, Building2, CreditCard,
   FileText, Upload, CheckCircle, Edit3, Save,
-  Shield, User, Award,
+  Shield, User, Award, RefreshCw, MapPin, Calendar,
 } from 'lucide-react';
 import { toast } from 'sonner';
+import hrmsApi from '../api';
+import { format } from 'date-fns';
 
 const DOCS = [
   { key: 'aadhaar',  title: 'Aadhaar Card',       status: 'verified',      icon: FileText },
@@ -18,45 +18,85 @@ const DOCS = [
 ];
 
 const Profile: React.FC = () => {
-  const { employee } = useAuth();
+  const { employee, refreshEmployee } = useAuth();
   const [loading, setLoading] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
   const [editing, setEditing] = useState(false);
+  const [liveProfile, setLiveProfile] = useState<any>(null);
   const [phone, setPhone] = useState(employee?.phone ?? '');
   const [name, setName] = useState(employee?.name ?? '');
+
+  // Fetch live profile from HRMS API
+  const loadProfile = async () => {
+    setRefreshing(true);
+    try {
+      const data = await hrmsApi.auth.me();
+      setLiveProfile(data);
+      setPhone(data?.phone ?? employee?.phone ?? '');
+      setName(data?.name ?? employee?.name ?? '');
+    } catch {
+      // Fallback to auth context data silently
+    } finally {
+      setRefreshing(false);
+    }
+  };
+
+  useEffect(() => { loadProfile(); }, []);
+
+  const profile = liveProfile ?? employee;
 
   const handleUpdate = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!employee) return;
     setLoading(true);
     try {
-      await updateDoc(doc(db, 'employees', employee.uid), { name, phone });
+      // employee._id is the MongoDB id used by HRMS JWT sessions
+      const empDbId = (employee as any)._id ?? (employee as any).id ?? employee.uid;
+      await hrmsApi.employees.update(empDbId, { name, phone });
       toast.success('Profile updated!');
       setEditing(false);
-    } catch {
-      toast.error('Failed to update profile');
+      await loadProfile();
+      await refreshEmployee();
+    } catch (err: any) {
+      toast.error(err.message ?? 'Failed to update profile');
     } finally {
       setLoading(false);
     }
   };
 
   const roleColor = {
-    admin:    { bg: 'oklch(0.72 0.19 167 / 0.12)', text: 'oklch(0.72 0.19 167)', border: 'oklch(0.72 0.19 167 / 0.25)' },
-    manager:  { bg: 'oklch(0.75 0.16 240 / 0.12)', text: 'oklch(0.75 0.16 240)', border: 'oklch(0.65 0.18 240 / 0.25)' },
-    employee: { bg: 'oklch(0.78 0.17 70 / 0.12)',  text: 'oklch(0.78 0.17 70)',  border: 'oklch(0.78 0.17 70 / 0.25)' },
+    super_admin:        { bg: 'oklch(0.72 0.19 167 / 0.12)', text: 'oklch(0.72 0.19 167)', border: 'oklch(0.72 0.19 167 / 0.25)' },
+    hr_manager:         { bg: 'oklch(0.75 0.16 240 / 0.12)', text: 'oklch(0.75 0.16 240)', border: 'oklch(0.65 0.18 240 / 0.25)' },
+    finance_manager:    { bg: 'oklch(0.75 0.16 240 / 0.12)', text: 'oklch(0.75 0.16 240)', border: 'oklch(0.65 0.18 240 / 0.25)' },
+    operations_manager: { bg: 'oklch(0.78 0.17 70 / 0.12)',  text: 'oklch(0.78 0.17 70)',  border: 'oklch(0.78 0.17 70 / 0.25)' },
+    support_agent:      { bg: 'oklch(0.75 0.18 25 / 0.12)',  text: 'oklch(0.75 0.18 25)',  border: 'oklch(0.75 0.18 25 / 0.25)' },
+    employee:           { bg: 'oklch(0.78 0.17 70 / 0.12)',  text: 'oklch(0.78 0.17 70)',  border: 'oklch(0.78 0.17 70 / 0.25)' },
   }[employee?.role ?? 'employee'] ?? { bg: 'oklch(1 0 0 / 0.05)', text: 'oklch(0.7 0 0)', border: 'oklch(1 0 0 / 0.1)' };
 
   const docStatusConfig = {
-    verified:     { label: 'Verified',     color: 'oklch(0.72 0.19 167)', bg: 'oklch(0.72 0.19 167 / 0.1)',  badge: 'aq-badge-green' },
-    pending:      { label: 'Pending',      color: 'oklch(0.78 0.17 70)',  bg: 'oklch(0.78 0.17 70 / 0.1)',   badge: 'aq-badge-amber' },
+    verified:      { label: 'Verified',     color: 'oklch(0.72 0.19 167)', bg: 'oklch(0.72 0.19 167 / 0.1)',  badge: 'aq-badge-green' },
+    pending:       { label: 'Pending',      color: 'oklch(0.78 0.17 70)',  bg: 'oklch(0.78 0.17 70 / 0.1)',   badge: 'aq-badge-amber' },
     'not-uploaded':{ label: 'Not Uploaded', color: 'oklch(0.45 0.02 210)', bg: 'oklch(1 0 0 / 0.04)',         badge: '' },
   };
+
+  const empId = profile?.empId ?? employee?.empId ?? '—';
+  const dept   = profile?.department ?? employee?.department ?? 'AquaGrow';
+  const desig  = profile?.designation ?? '';
+  const salary = profile?.salary ?? employee?.salary;
+  const joined = profile?.joiningDate ?? employee?.joiningDate;
+  const status = profile?.status ?? employee?.status ?? 'active';
 
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div>
-        <h1 className="text-2xl font-bold text-white" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>My Profile</h1>
-        <p className="text-sm text-[oklch(0.5_0.02_210)] mt-0.5">Manage your personal information and documents.</p>
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-2xl font-bold text-white" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>My Profile</h1>
+          <p className="text-sm text-[oklch(0.5_0.02_210)] mt-0.5">Manage your personal information and documents.</p>
+        </div>
+        <button onClick={loadProfile} disabled={refreshing} className="aq-btn-ghost !py-1.5 !px-3 !text-xs">
+          <RefreshCw size={13} className={refreshing ? 'animate-spin' : ''} /> Refresh
+        </button>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
@@ -68,13 +108,13 @@ const Profile: React.FC = () => {
 
           {/* Avatar */}
           <div className="relative mt-2 mb-4">
-            {employee?.photoUrl ? (
-              <img src={employee.photoUrl} alt={employee.name}
+            {profile?.photoUrl ? (
+              <img src={profile.photoUrl} alt={profile.name}
                 className="w-24 h-24 rounded-2xl object-cover aq-avatar-ring" />
             ) : (
               <div className="w-24 h-24 rounded-2xl bg-gradient-to-br from-[oklch(0.72_0.19_167)] to-[oklch(0.6_0.16_187)] flex items-center justify-center text-[oklch(0.08_0.015_200)] font-bold text-3xl aq-avatar-ring"
                 style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
-                {employee?.name?.charAt(0) ?? 'A'}
+                {profile?.name?.charAt(0) ?? 'A'}
               </div>
             )}
             <button className="absolute -bottom-1.5 -right-1.5 w-7 h-7 rounded-xl bg-[oklch(0.72_0.19_167)] flex items-center justify-center shadow-lg">
@@ -83,23 +123,34 @@ const Profile: React.FC = () => {
           </div>
 
           <h2 className="text-xl font-bold text-white mb-0.5" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
-            {employee?.name}
+            {profile?.name ?? '—'}
           </h2>
-          <p className="text-sm text-[oklch(0.55_0.02_210)] mb-3 capitalize">{employee?.role}</p>
+          {desig && <p className="text-xs text-[oklch(0.65_0.02_210)] mb-1">{desig}</p>}
+          <p className="text-sm text-[oklch(0.55_0.02_210)] mb-3 capitalize">
+            {(employee?.role ?? '').replace(/_/g, ' ')}
+          </p>
 
           {/* Role badge */}
           <div className="px-3 py-1 rounded-full text-[11px] font-bold mb-5"
             style={{ background: roleColor.bg, color: roleColor.text, border: `1px solid ${roleColor.border}` }}>
             <Shield size={10} className="inline mr-1" />
-            {String(employee?.role).replace('_', ' ').toUpperCase()}
+            {String(employee?.role ?? 'employee').replace(/_/g, ' ').toUpperCase()}
+          </div>
+
+          {/* Status */}
+          <div className="mb-3">
+            <span className={`aq-badge ${status === 'active' ? 'aq-badge-green' : status === 'on_leave' ? 'aq-badge-amber' : 'aq-badge-red'}`}>
+              {status.replace('_', ' ')}
+            </span>
           </div>
 
           {/* Quick info */}
           <div className="w-full space-y-2.5" style={{ borderTop: '1px solid oklch(1 0 0 / 6%)', paddingTop: '1.25rem' }}>
             {[
-              { icon: Mail,      label: employee?.email ?? 'Not set' },
-              { icon: Phone,     label: employee?.phone ?? 'Not provided' },
-              { icon: Building2, label: 'AquaGrow HQ, Nellore' },
+              { icon: Mail,      label: profile?.email ?? 'Not set' },
+              { icon: Phone,     label: profile?.phone ?? 'Not provided' },
+              { icon: Building2, label: dept ?? 'AquaGrow HQ' },
+              ...(joined ? [{ icon: Calendar, label: `Joined ${format(new Date(joined), 'MMM yyyy')}` }] : []),
             ].map(({ icon: Icon, label }) => (
               <div key={label} className="flex items-center gap-2.5 text-left">
                 <Icon size={13} className="text-[oklch(0.45_0.02_210)] shrink-0" />
@@ -108,12 +159,21 @@ const Profile: React.FC = () => {
             ))}
           </div>
 
-          {/* Employee ID */}
+          {/* Employee ID (live from API) */}
           <div className="mt-4 w-full px-3 py-2 rounded-xl text-left"
             style={{ background: 'oklch(1 0 0 / 4%)', border: '1px solid oklch(1 0 0 / 7%)' }}>
             <p className="text-[9px] uppercase tracking-widest font-bold text-[oklch(0.45_0.02_210)] mb-0.5">Employee ID</p>
-            <p className="text-sm font-mono font-bold text-[oklch(0.72_0.19_167)]">AQ-2026-001</p>
+            <p className="text-sm font-mono font-bold text-[oklch(0.72_0.19_167)]">{empId}</p>
           </div>
+
+          {/* Salary (if available) */}
+          {salary && (
+            <div className="mt-2 w-full px-3 py-2 rounded-xl text-left"
+              style={{ background: 'oklch(0.72 0.19 167 / 0.06)', border: '1px solid oklch(0.72 0.19 167 / 0.15)' }}>
+              <p className="text-[9px] uppercase tracking-widest font-bold text-[oklch(0.45_0.02_210)] mb-0.5">Monthly CTC</p>
+              <p className="text-sm font-mono font-bold text-[oklch(0.72_0.19_167)]">₹{Number(salary).toLocaleString()}</p>
+            </div>
+          )}
         </div>
 
         {/* Details + Docs */}
@@ -139,10 +199,12 @@ const Profile: React.FC = () => {
             <form onSubmit={handleUpdate}>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 {[
-                  { label: 'Full Name',     value: editing ? name : (employee?.name ?? ''), key: 'name',  setter: setName, editable: true },
-                  { label: 'Phone Number',  value: editing ? phone : (employee?.phone ?? 'Not set'), key: 'phone', setter: setPhone, editable: true },
-                  { label: 'Email Address', value: employee?.email ?? '', key: 'email', editable: false },
-                  { label: 'Role',          value: String(employee?.role ?? 'employee'), key: 'role', editable: false },
+                  { label: 'Full Name',       value: editing ? name : (profile?.name ?? ''), key: 'name',  setter: setName, editable: true },
+                  { label: 'Phone Number',    value: editing ? phone : (profile?.phone ?? 'Not set'), key: 'phone', setter: setPhone, editable: true },
+                  { label: 'Email Address',   value: profile?.email ?? '', key: 'email', editable: false },
+                  { label: 'Role',            value: String(employee?.role ?? 'employee').replace(/_/g, ' '), key: 'role', editable: false },
+                  { label: 'Department',      value: dept, key: 'department', editable: false },
+                  { label: 'Designation',     value: desig || '—', key: 'designation', editable: false },
                 ].map(f => (
                   <div key={f.key}>
                     <label className="block text-[9px] uppercase tracking-widest font-bold text-[oklch(0.45_0.02_210)] mb-1.5">
@@ -215,8 +277,8 @@ const Profile: React.FC = () => {
               <div className="flex items-center gap-2.5">
                 <Shield size={16} className="text-[oklch(0.72_0.19_167)]" />
                 <div>
-                  <p className="text-xs font-bold text-white">Google Auth</p>
-                  <p className="text-[10px] text-[oklch(0.5_0.02_210)]">Signed in via Google OAuth 2.0</p>
+                  <p className="text-xs font-bold text-white">HRMS Auth</p>
+                  <p className="text-[10px] text-[oklch(0.5_0.02_210)]">Authenticated via Employee ID & Password</p>
                 </div>
               </div>
               <span className="aq-badge aq-badge-green">Verified</span>

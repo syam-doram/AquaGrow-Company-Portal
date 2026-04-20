@@ -1,19 +1,18 @@
-import React, { useState, useEffect } from 'react';
-import { db } from '../firebase';
-import { collection, query, onSnapshot, doc, updateDoc, Timestamp, where, orderBy } from 'firebase/firestore';
+import React, { useState, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { useAuth } from '../context/AuthContext';
 import {
-  CalendarDays, CheckCircle, XCircle, Clock, Search, MessageCircle, X,
+  CalendarDays, CheckCircle, XCircle, Clock, Search, MessageCircle, X, RefreshCw,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { format, differenceInCalendarDays } from 'date-fns';
+import hrmsApi from '../api';
 
 interface LeaveRecord {
-  id: string; employeeId: string; employeeName?: string;
+  id: string; _id?: string; employeeId?: string; employeeName?: string;
   type: string; from: string; to: string;
   status: 'pending' | 'approved' | 'rejected';
-  reason: string; appliedAt: Timestamp;
+  reason: string; appliedAt?: string;
   approvedBy?: string; approverComment?: string;
 }
 
@@ -27,36 +26,40 @@ const LeaveApproval: React.FC = () => {
   const [leaves, setLeaves] = useState<LeaveRecord[]>([]);
   const [filter, setFilter] = useState<string>('pending');
   const [search, setSearch] = useState('');
+  const [filterYear, setFilterYear] = useState(new Date().getFullYear());
+  const YEARS = [2024, 2025, 2026, 2027];
   const [selected, setSelected] = useState<LeaveRecord | null>(null);
   const [comment, setComment] = useState('');
   const [processing, setProcessing] = useState(false);
+  const [fetching, setFetching] = useState(true);
   const canApprove = hasPermission('approve_leaves');
 
-  useEffect(() => {
-    const q = query(collection(db, 'leaves'), orderBy('appliedAt', 'desc'));
-    const unsub = onSnapshot(q, snap => {
-      const docs = snap.docs.map(d => ({ id: d.id, ...d.data() } as LeaveRecord));
-      setLeaves(docs);
-    });
-    return () => unsub();
+  const fetchLeaves = useCallback(async () => {
+    setFetching(true);
+    try {
+      const data = await hrmsApi.leaves.list();
+      const normalised = data.map((l: any) => ({ ...l, id: l._id ?? l.id ?? '' }));
+      setLeaves(normalised);
+    } catch (err: any) {
+      toast.error(err.message ?? 'Failed to load leaves');
+    } finally {
+      setFetching(false);
+    }
   }, []);
 
+  useEffect(() => { fetchLeaves(); }, [fetchLeaves]);
+
   const handleDecision = async (leaveId: string, decision: 'approved' | 'rejected') => {
-    if (!employee) return;
     setProcessing(true);
     try {
-      await updateDoc(doc(db, 'leaves', leaveId), {
-        status: decision,
-        approvedBy: employee.uid,
-        approverName: employee.name,
-        approverComment: comment,
-        decidedAt: Timestamp.now(),
-      });
+      await hrmsApi.leaves.update(leaveId, { status: decision, comment });
+      if (comment) await hrmsApi.leaves.comment(leaveId, comment);
       toast.success(`Leave ${decision} successfully!`);
       setSelected(null);
       setComment('');
-    } catch {
-      toast.error('Failed to update leave');
+      await fetchLeaves();
+    } catch (err: any) {
+      toast.error(err.message ?? 'Failed to update leave');
     } finally {
       setProcessing(false);
     }
@@ -66,7 +69,8 @@ const LeaveApproval: React.FC = () => {
     const matchFilter = filter === 'all' || l.status === filter;
     const matchSearch = !search || (l.employeeName ?? '').toLowerCase().includes(search.toLowerCase()) ||
       l.type.toLowerCase().includes(search.toLowerCase());
-    return matchFilter && matchSearch;
+    const matchYear = filterYear === 0 || new Date(l.from).getFullYear() === filterYear;
+    return matchFilter && matchSearch && matchYear;
   });
 
   const pending   = leaves.filter(l => l.status === 'pending').length;
@@ -104,6 +108,11 @@ const LeaveApproval: React.FC = () => {
           <input value={search} onChange={e => setSearch(e.target.value)}
             placeholder="Search employee…" className="aq-input pl-8 !py-1.5 !text-xs" />
         </div>
+        <select value={filterYear} onChange={e => setFilterYear(Number(e.target.value))}
+          className="aq-input !py-1.5 !text-xs !w-auto">
+          <option value={0}>All Years</option>
+          {YEARS.map(y => <option key={y}>{y}</option>)}
+        </select>
         {['all','pending','approved','rejected'].map(f => (
           <button key={f} onClick={() => setFilter(f)}
             className="px-3 py-1.5 rounded-xl text-[10px] font-bold capitalize transition-all"

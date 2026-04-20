@@ -1,0 +1,395 @@
+{
+  "info": {
+    "name": "AquaGrow HRMS API",
+    "description": "Complete HRMS API collection for AquaGrow Employee Portal\nBase URL: https://aquagrow.onrender.com/api/hrms\n\nWorkflow:\n1. Run 'Seed Demo Employees' first (no auth needed)\n2. Run 'Login' to get JWT token\n3. Token is auto-saved to {{hrms_token}} variable\n4. All other requests use {{hrms_token}} automatically",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    { "key": "base_url", "value": "https://aquagrow.onrender.com/api/hrms" },
+    { "key": "hrms_token", "value": "" },
+    { "key": "setup_key", "value": "aquagrow-hrms-setup-2026" }
+  ],
+  "item": [
+    {
+      "name": "🌱 SETUP (Run First)",
+      "item": [
+        {
+          "name": "Seed Demo Employees",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 200 || pm.response.code === 201) {",
+                  "    const data = pm.response.json();",
+                  "    console.log('Seeded:', data.count, 'employees');",
+                  "    pm.test('Seed successful', () => pm.expect(data.success).to.be.true);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "x-setup-key", "value": "{{setup_key}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"employees\": [\n    {\n      \"empId\": \"AQ-SA001\",\n      \"name\": \"Syam Kumar\",\n      \"email\": \"superadmin@aquagrow.com\",\n      \"phone\": \"9999999001\",\n      \"password\": \"Admin@123\",\n      \"role\": \"super_admin\",\n      \"department\": \"Management\",\n      \"designation\": \"CEO\",\n      \"salary\": 150000,\n      \"joiningDate\": \"2023-01-01\"\n    },\n    {\n      \"empId\": \"AQ-HR001\",\n      \"name\": \"Priya Sharma\",\n      \"email\": \"hr@aquagrow.com\",\n      \"phone\": \"9999999002\",\n      \"password\": \"HRMgr@123\",\n      \"role\": \"hr_manager\",\n      \"department\": \"Human Resources\",\n      \"designation\": \"HR Manager\",\n      \"salary\": 95000,\n      \"joiningDate\": \"2023-03-15\"\n    },\n    {\n      \"empId\": \"AQ-FN001\",\n      \"name\": \"Rahul Verma\",\n      \"email\": \"finance@aquagrow.com\",\n      \"phone\": \"9999999003\",\n      \"password\": \"Fin@123\",\n      \"role\": \"finance_manager\",\n      \"department\": \"Finance\",\n      \"designation\": \"Finance Manager\",\n      \"salary\": 90000,\n      \"joiningDate\": \"2023-02-01\"\n    },\n    {\n      \"empId\": \"AQ-OP001\",\n      \"name\": \"Anita Reddy\",\n      \"email\": \"ops@aquagrow.com\",\n      \"phone\": \"9999999004\",\n      \"password\": \"Ops@123\",\n      \"role\": \"operations_manager\",\n      \"department\": \"Operations\",\n      \"designation\": \"Operations Manager\",\n      \"salary\": 88000,\n      \"joiningDate\": \"2023-04-01\"\n    },\n    {\n      \"empId\": \"AQ-SP001\",\n      \"name\": \"Vijay Kumar\",\n      \"email\": \"support@aquagrow.com\",\n      \"phone\": \"9999999005\",\n      \"password\": \"Sup@123\",\n      \"role\": \"support_agent\",\n      \"department\": \"Customer Support\",\n      \"designation\": \"Support Agent\",\n      \"salary\": 45000,\n      \"joiningDate\": \"2023-06-01\"\n    },\n    {\n      \"empId\": \"AQ-EMP01\",\n      \"name\": \"Meena Patel\",\n      \"email\": \"employee@aquagrow.com\",\n      \"phone\": \"9999999006\",\n      \"password\": \"Emp@123\",\n      \"role\": \"employee\",\n      \"department\": \"Aquaculture\",\n      \"designation\": \"Farm Technician\",\n      \"salary\": 35000,\n      \"joiningDate\": \"2023-07-01\"\n    }\n  ]\n}"
+            },
+            "url": { "raw": "{{base_url}}/setup", "host": ["{{base_url}}"], "path": ["setup"] }
+          }
+        }
+      ]
+    },
+    {
+      "name": "🔐 Auth",
+      "item": [
+        {
+          "name": "Login (Super Admin)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "    const data = pm.response.json();",
+                  "    pm.collectionVariables.set('hrms_token', data.token);",
+                  "    console.log('Token saved. Role:', data.employee.role);",
+                  "    pm.test('Login successful', () => pm.expect(data.token).to.be.a('string'));",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"empId\": \"AQ-SA001\",\n  \"password\": \"Admin@123\"\n}"
+            },
+            "url": { "raw": "{{base_url}}/auth/login", "host": ["{{base_url}}"], "path": ["auth", "login"] }
+          }
+        },
+        {
+          "name": "Login (HR Manager)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "    const data = pm.response.json();",
+                  "    pm.collectionVariables.set('hrms_token', data.token);",
+                  "    console.log('Token saved. Role:', data.employee.role);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"empId\": \"AQ-HR001\",\n  \"password\": \"HRMgr@123\"\n}"
+            },
+            "url": { "raw": "{{base_url}}/auth/login", "host": ["{{base_url}}"], "path": ["auth", "login"] }
+          }
+        },
+        {
+          "name": "Login (Finance Manager)",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"empId\": \"AQ-FN001\",\n  \"password\": \"Fin@123\"\n}"
+            },
+            "url": { "raw": "{{base_url}}/auth/login", "host": ["{{base_url}}"], "path": ["auth", "login"] }
+          }
+        },
+        {
+          "name": "Login (Employee)",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"empId\": \"AQ-EMP01\",\n  \"password\": \"Emp@123\"\n}"
+            },
+            "url": { "raw": "{{base_url}}/auth/login", "host": ["{{base_url}}"], "path": ["auth", "login"] }
+          }
+        },
+        {
+          "name": "Get My Profile",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{hrms_token}}" }],
+            "url": { "raw": "{{base_url}}/auth/me", "host": ["{{base_url}}"], "path": ["auth", "me"] }
+          }
+        }
+      ]
+    },
+    {
+      "name": "👥 Employees",
+      "item": [
+        {
+          "name": "List All Employees",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{hrms_token}}" }],
+            "url": {
+              "raw": "{{base_url}}/employees",
+              "host": ["{{base_url}}"],
+              "path": ["employees"],
+              "query": [
+                { "key": "dept", "value": "", "disabled": true },
+                { "key": "status", "value": "active", "disabled": true },
+                { "key": "search", "value": "", "disabled": true }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get Employee by ID",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{hrms_token}}" }],
+            "url": { "raw": "{{base_url}}/employees/:id", "host": ["{{base_url}}"], "path": ["employees", ":id"], "variable": [{ "key": "id", "value": "" }] }
+          }
+        },
+        {
+          "name": "Create Employee (HR only)",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{hrms_token}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"empId\": \"AQ-NEW01\",\n  \"name\": \"New Employee\",\n  \"email\": \"new@aquagrow.com\",\n  \"phone\": \"9876543210\",\n  \"password\": \"Emp@123\",\n  \"role\": \"employee\",\n  \"department\": \"Aquaculture\",\n  \"designation\": \"Technician\",\n  \"salary\": 30000,\n  \"joiningDate\": \"2026-04-19\"\n}"
+            },
+            "url": { "raw": "{{base_url}}/employees", "host": ["{{base_url}}"], "path": ["employees"] }
+          }
+        },
+        {
+          "name": "Update Employee",
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{hrms_token}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"designation\": \"Senior Technician\",\n  \"salary\": 40000\n}"
+            },
+            "url": { "raw": "{{base_url}}/employees/:id", "host": ["{{base_url}}"], "path": ["employees", ":id"], "variable": [{ "key": "id", "value": "" }] }
+          }
+        }
+      ]
+    },
+    {
+      "name": "📅 Attendance",
+      "item": [
+        {
+          "name": "Check In",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Authorization", "value": "Bearer {{hrms_token}}" }],
+            "url": { "raw": "{{base_url}}/attendance/checkin", "host": ["{{base_url}}"], "path": ["attendance", "checkin"] }
+          }
+        },
+        {
+          "name": "Check Out",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Authorization", "value": "Bearer {{hrms_token}}" }],
+            "url": { "raw": "{{base_url}}/attendance/checkout", "host": ["{{base_url}}"], "path": ["attendance", "checkout"] }
+          }
+        },
+        {
+          "name": "Get Attendance (This Month)",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{hrms_token}}" }],
+            "url": {
+              "raw": "{{base_url}}/attendance?month=2026-04",
+              "host": ["{{base_url}}"],
+              "path": ["attendance"],
+              "query": [{ "key": "month", "value": "2026-04" }]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "🌴 Leaves",
+      "item": [
+        {
+          "name": "Apply Leave",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{hrms_token}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"type\": \"casual\",\n  \"from\": \"2026-04-25\",\n  \"to\": \"2026-04-26\",\n  \"days\": 2,\n  \"reason\": \"Personal work\"\n}"
+            },
+            "url": { "raw": "{{base_url}}/leaves", "host": ["{{base_url}}"], "path": ["leaves"] }
+          }
+        },
+        {
+          "name": "List My Leaves",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{hrms_token}}" }],
+            "url": { "raw": "{{base_url}}/leaves", "host": ["{{base_url}}"], "path": ["leaves"] }
+          }
+        },
+        {
+          "name": "Approve Leave (Manager)",
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{hrms_token}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"status\": \"approved\"\n}"
+            },
+            "url": { "raw": "{{base_url}}/leaves/:id", "host": ["{{base_url}}"], "path": ["leaves", ":id"], "variable": [{ "key": "id", "value": "" }] }
+          }
+        }
+      ]
+    },
+    {
+      "name": "💰 Payroll",
+      "item": [
+        {
+          "name": "My Payslips",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{hrms_token}}" }],
+            "url": { "raw": "{{base_url}}/payslips", "host": ["{{base_url}}"], "path": ["payslips"] }
+          }
+        },
+        {
+          "name": "List Payroll (Finance)",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{hrms_token}}" }],
+            "url": {
+              "raw": "{{base_url}}/payroll?month=2026-04",
+              "host": ["{{base_url}}"],
+              "path": ["payroll"],
+              "query": [{ "key": "month", "value": "2026-04" }]
+            }
+          }
+        },
+        {
+          "name": "Bulk Generate Payroll",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{hrms_token}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"month\": \"2026-04\"\n}"
+            },
+            "url": { "raw": "{{base_url}}/payroll/bulk-generate", "host": ["{{base_url}}"], "path": ["payroll", "bulk-generate"] }
+          }
+        },
+        {
+          "name": "Approve Payroll",
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{hrms_token}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"status\": \"approved\"\n}"
+            },
+            "url": { "raw": "{{base_url}}/payroll/:id", "host": ["{{base_url}}"], "path": ["payroll", ":id"], "variable": [{ "key": "id", "value": "" }] }
+          }
+        }
+      ]
+    },
+    {
+      "name": "🎫 Tickets",
+      "item": [
+        {
+          "name": "Raise Ticket",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{hrms_token}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"category\": \"it\",\n  \"priority\": \"medium\",\n  \"subject\": \"Laptop not working\",\n  \"description\": \"My laptop screen flickered and shut down.\"\n}"
+            },
+            "url": { "raw": "{{base_url}}/tickets", "host": ["{{base_url}}"], "path": ["tickets"] }
+          }
+        },
+        {
+          "name": "List Tickets",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{hrms_token}}" }],
+            "url": { "raw": "{{base_url}}/tickets", "host": ["{{base_url}}"], "path": ["tickets"] }
+          }
+        },
+        {
+          "name": "Reply to Ticket",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{hrms_token}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"text\": \"We are looking into this issue.\"\n}"
+            },
+            "url": { "raw": "{{base_url}}/tickets/:id/message", "host": ["{{base_url}}"], "path": ["tickets", ":id", "message"], "variable": [{ "key": "id", "value": "" }] }
+          }
+        }
+      ]
+    },
+    {
+      "name": "📊 Dashboard & Stats",
+      "item": [
+        {
+          "name": "Dashboard Stats (Managers)",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{hrms_token}}" }],
+            "url": { "raw": "{{base_url}}/dashboard", "host": ["{{base_url}}"], "path": ["dashboard"] }
+          }
+        },
+        {
+          "name": "My Notifications",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{hrms_token}}" }],
+            "url": { "raw": "{{base_url}}/notifications", "host": ["{{base_url}}"], "path": ["notifications"] }
+          }
+        }
+      ]
+    }
+  ]
+}

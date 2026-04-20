@@ -142,25 +142,54 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [loading, setLoading] = useState(true);
 
   const fetchEmployee = async (u: User) => {
-    const docRef = doc(db, 'employees', u.uid);
-    const docSnap = await getDoc(docRef);
-    if (docSnap.exists()) {
-      setEmployee(docSnap.data() as EmployeeData);
-    } else {
-      const SUPER_ADMIN_EMAILS = ['syamk.doram@gmail.com'];
-      const role: EmployeeRole = SUPER_ADMIN_EMAILS.includes(u.email ?? '') ? 'super_admin' : 'employee';
-      const newEmployee: EmployeeData = {
-        uid: u.uid,
-        name: u.displayName ?? 'New Employee',
-        email: u.email ?? '',
-        role,
-        photoUrl: u.photoURL ?? '',
-        empId: `AQ-${Date.now().toString().slice(-6)}`,
-        status: 'active',
-        joiningDate: new Date().toISOString().slice(0, 10),
-      };
-      await setDoc(docRef, newEmployee);
-      setEmployee(newEmployee);
+    try {
+      const docRef = doc(db, 'employees', u.uid);
+      const docSnap = await getDoc(docRef);
+      if (docSnap.exists()) {
+        setEmployee(docSnap.data() as EmployeeData);
+      } else {
+        const SUPER_ADMIN_EMAILS = ['syamk.doram@gmail.com'];
+        const role: EmployeeRole = SUPER_ADMIN_EMAILS.includes(u.email ?? '') ? 'super_admin' : 'employee';
+        const newEmployee: EmployeeData = {
+          uid: u.uid,
+          name: u.displayName ?? 'New Employee',
+          email: u.email ?? '',
+          role,
+          photoUrl: u.photoURL ?? '',
+          empId: `AQ-${Date.now().toString().slice(-6)}`,
+          status: 'active',
+          joiningDate: new Date().toISOString().slice(0, 10),
+        };
+        await setDoc(docRef, newEmployee);
+        setEmployee(newEmployee);
+      }
+    } catch (err) {
+      // Firestore error — fallback gracefully (e.g. when no Firebase auth but JWT is set)
+      console.warn('[AuthContext] Firestore employee fetch failed, falling back.', err);
+    }
+  };
+
+  /** Re-hydrate employee from HRMS API JWT (used when Firebase session is absent) */
+  const fetchEmployeeFromApi = async () => {
+    const { default: hrmsApi } = await import('../api');
+    try {
+      const emp = await hrmsApi.auth.me();
+      setEmployee({
+        uid:         emp._id,
+        empId:       emp.empId,
+        name:        emp.name,
+        email:       emp.email,
+        role:        (emp.role as EmployeeRole) ?? 'employee',
+        department:  emp.department,
+        designation: emp.designation,
+        photoUrl:    emp.photoUrl,
+        status:      emp.status,
+        joiningDate: emp.joiningDate,
+      });
+    } catch {
+      // Token expired or invalid — clear it
+      localStorage.removeItem('hrms_token');
+      setEmployee(null);
     }
   };
 
@@ -168,20 +197,22 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const unsubscribe = onAuthStateChanged(auth, async (u) => {
       setUser(u);
       if (u) {
+        // Firebase user present → load from Firestore as before
         await fetchEmployee(u);
       } else {
-        // Only clear employee if NOT already set by API login
-        setEmployee(prev => {
-          // If we already have an employee from API login (uid starts with MongoDB _id pattern)
-          // keep it — Firebase logged out but HRMS JWT is still valid
-          const hrmsToken = localStorage.getItem('hrms_token');
-          return hrmsToken ? prev : null;
-        });
+        // No Firebase user — check if HRMS JWT is present
+        const hrmsToken = localStorage.getItem('hrms_token');
+        if (hrmsToken) {
+          // Reload employee from HRMS API using stored JWT
+          await fetchEmployeeFromApi();
+        } else {
+          setEmployee(null);
+        }
       }
       setLoading(false);
     });
     return () => unsubscribe();
-  }, []);
+  }, []); // eslint-disable-line
 
   const refreshEmployee = async () => {
     if (user) await fetchEmployee(user);

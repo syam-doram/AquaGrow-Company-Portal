@@ -43,7 +43,13 @@
     --radius-4xl: calc(var(--radius) * 2.6);
 }
 
-:root {
+/* ══════════════════════════════════════════════════════════════════════════════
+   THEME TOKENS  —  Dark (default) and Light
+   ══════════════════════════════════════════════════════════════════════════════ */
+
+/* ── Dark Mode (default) ─────────────────────────────────────────────────────── */
+:root,
+:root.theme-dark {
     --background: oklch(0.08 0.015 200);
     --foreground: oklch(0.97 0 0);
     --card: oklch(0.11 0.015 210);
@@ -63,7 +69,7 @@
     --input: oklch(1 0 0 / 10%);
     --ring: oklch(0.72 0.19 167);
     --radius: 0.75rem;
-    --sidebar: oklch(0.09 0.02 205);
+    --sidebar: oklch(0.07 0.018 205);
     --sidebar-foreground: oklch(0.85 0 0);
     --sidebar-primary: oklch(0.72 0.19 167);
     --sidebar-primary-foreground: oklch(0.08 0.015 200);
@@ -71,8 +77,134 @@
     --sidebar-accent-foreground: oklch(0.9 0 0);
     --sidebar-border: oklch(1 0 0 / 8%);
     --sidebar-ring: oklch(0.72 0.19 167);
+
+    /* Custom AQ tokens (dark) */
+    --aq-body-bg: oklch(0.08 0.015 200);
+    --aq-body-bg2: oklch(0.12 0.04 180 / 50%);
+    --aq-body-bg3: oklch(0.10 0.03 200 / 40%);
+    --aq-login-bg: oklch(0.07 0.018 205);
+    --aq-login-glow1: oklch(0.72 0.19 167 / 12%);
+    --aq-login-glow2: oklch(0.5 0.15 240 / 10%);
+    --aq-login-glow3: oklch(0.6 0.16 187 / 8%);
+
+    --aq-glass-bg:     oklch(1 0 0 / 4%);
+    --aq-glass-border: oklch(1 0 0 / 8%);
+    --aq-sidebar-bg:   oklch(0.07 0.018 205);
+    --aq-sidebar-border: oklch(1 0 0 / 6%);
+
+    --aq-input-bg:     oklch(1 0 0 / 5%);
+    --aq-input-border: oklch(1 0 0 / 10%);
+    --aq-input-color:  oklch(0.9 0 0);
+    --aq-input-placeholder: oklch(0.45 0.02 210);
+    --aq-input-focus-border: oklch(0.72 0.19 167 / 50%);
+
+    --aq-text-primary:   oklch(0.97 0 0);
+    --aq-text-secondary: oklch(0.6 0.02 210);
+    --aq-text-muted:     oklch(0.5 0.02 210);
+    --aq-text-faint:     oklch(0.4 0.02 210);
+
+    --aq-stat-bg:        oklch(1 0 0 / 4%);
+    --aq-stat-border:    oklch(1 0 0 / 8%);
+    --aq-stat-hover-bg:  oklch(1 0 0 / 6%);
+    --aq-table-th-color: oklch(0.5 0.02 210);
+    --aq-table-th-bg:    oklch(1 0 0 / 2%);
+    --aq-table-th-border: oklch(1 0 0 / 6%);
+    --aq-table-td-color: oklch(0.85 0 0);
+    --aq-table-td-border: oklch(1 0 0 / 5%);
+    --aq-table-hover:    oklch(1 0 0 / 3%);
+
+    --aq-scrollbar: oklch(1 0 0 / 12%);
+    --aq-scrollbar-hover: oklch(0.72 0.19 167 / 40%);
+    --aq-ghost-bg: oklch(1 0 0 / 5%);
+    --aq-ghost-hover: oklch(1 0 0 / 9%);
+    --aq-ghost-color: oklch(0.65 0.02 210);
+    --aq-avatar-ring: oklch(0.07 0.018 205);
+    --aq-nav-color: oklch(0.6 0.02 210);
+    --aq-nav-hover-bg: oklch(1 0 0 / 5%);
+    --aq-nav-hover-color: oklch(0.9 0 0);
+    --aq-progress-track: oklch(1 0 0 / 8%);
 }
 
+/* ── Light Mode ──────────────────────────────────────────────────────────────── */
+:root.theme-light {
+    --background: oklch(0.97 0.005 220);
+    --foreground: oklch(0.15 0.015 210);
+    --card: oklch(1 0 0);
+    --card-foreground: oklch(0.15 0.015 210);
+    --popover: oklch(1 0 0);
+    --popover-foreground: oklch(0.15 0.015 210);
+    --primary: oklch(0.60 0.17 167);
+    --primary-foreground: oklch(0.99 0 0);
+    --secondary: oklch(0.93 0.008 210);
+    --secondary-foreground: oklch(0.25 0.015 210);
+    --muted: oklch(0.94 0.006 215);
+    --muted-foreground: oklch(0.45 0.02 210);
+    --accent: oklch(0.91 0.01 210);
+    --accent-foreground: oklch(0.2 0.015 210);
+    --destructive: oklch(0.58 0.22 25);
+    --border: oklch(0.0 0 0 / 10%);
+    --input: oklch(0.0 0 0 / 8%);
+    --ring: oklch(0.60 0.17 167);
+    --radius: 0.75rem;
+    --sidebar: oklch(0.96 0.006 215);
+    --sidebar-foreground: oklch(0.25 0.015 210);
+    --sidebar-primary: oklch(0.60 0.17 167);
+    --sidebar-primary-foreground: oklch(0.99 0 0);
+    --sidebar-accent: oklch(0.0 0 0 / 5%);
+    --sidebar-accent-foreground: oklch(0.2 0.015 210);
+    --sidebar-border: oklch(0.0 0 0 / 8%);
+    --sidebar-ring: oklch(0.60 0.17 167);
+
+    /* Custom AQ tokens (light) */
+    --aq-body-bg: oklch(0.955 0.007 220);
+    --aq-body-bg2: oklch(0.60 0.17 167 / 8%);
+    --aq-body-bg3: oklch(0.5 0.12 200 / 6%);
+    --aq-login-bg: oklch(0.96 0.006 215);
+    --aq-login-glow1: oklch(0.60 0.17 167 / 15%);
+    --aq-login-glow2: oklch(0.5 0.15 240 / 8%);
+    --aq-login-glow3: oklch(0.5 0.14 187 / 8%);
+
+    --aq-glass-bg:     oklch(1 0 0 / 70%);
+    --aq-glass-border: oklch(0.0 0 0 / 8%);
+    --aq-sidebar-bg:   oklch(0.96 0.006 215);
+    --aq-sidebar-border: oklch(0.0 0 0 / 8%);
+
+    --aq-input-bg:     oklch(1 0 0 / 80%);
+    --aq-input-border: oklch(0.0 0 0 / 12%);
+    --aq-input-color:  oklch(0.15 0.015 210);
+    --aq-input-placeholder: oklch(0.55 0.02 210);
+    --aq-input-focus-border: oklch(0.60 0.17 167 / 60%);
+
+    --aq-text-primary:   oklch(0.13 0.015 210);
+    --aq-text-secondary: oklch(0.40 0.02 210);
+    --aq-text-muted:     oklch(0.50 0.02 210);
+    --aq-text-faint:     oklch(0.60 0.02 210);
+
+    --aq-stat-bg:        oklch(1 0 0 / 80%);
+    --aq-stat-border:    oklch(0.0 0 0 / 8%);
+    --aq-stat-hover-bg:  oklch(1 0 0);
+    --aq-table-th-color: oklch(0.40 0.02 210);
+    --aq-table-th-bg:    oklch(0.0 0 0 / 2%);
+    --aq-table-th-border: oklch(0.0 0 0 / 7%);
+    --aq-table-td-color: oklch(0.2 0.015 210);
+    --aq-table-td-border: oklch(0.0 0 0 / 6%);
+    --aq-table-hover:    oklch(0.60 0.17 167 / 4%);
+
+    --aq-scrollbar: oklch(0.0 0 0 / 15%);
+    --aq-scrollbar-hover: oklch(0.60 0.17 167 / 50%);
+    --aq-ghost-bg: oklch(0.0 0 0 / 5%);
+    --aq-ghost-hover: oklch(0.0 0 0 / 9%);
+    --aq-ghost-color: oklch(0.35 0.02 210);
+    --aq-avatar-ring: oklch(0.96 0.006 215);
+    --aq-nav-color: oklch(0.40 0.02 210);
+    --aq-nav-hover-bg: oklch(0.0 0 0 / 5%);
+    --aq-nav-hover-color: oklch(0.15 0.015 210);
+    --aq-progress-track: oklch(0.0 0 0 / 8%);
+}
+
+/* ══════════════════════════════════════════════════════════════════════════════
+   BASE
+   ══════════════════════════════════════════════════════════════════════════════ */
 @layer base {
   * {
     @apply border-border outline-ring/50;
@@ -84,358 +216,269 @@
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
   }
-  html {
-    scroll-behavior: smooth;
-  }
+  html { scroll-behavior: smooth; }
 }
 
-/* ─── Global Background ─── */
+/* ── Global Body Background ──────────────────────────────────────────────────── */
 body {
-  background: oklch(0.08 0.015 200);
-  background-image: 
-    radial-gradient(ellipse at 0% 0%, oklch(0.12 0.04 180 / 50%) 0%, transparent 60%),
-    radial-gradient(ellipse at 100% 100%, oklch(0.10 0.03 200 / 40%) 0%, transparent 60%);
+  background: var(--aq-body-bg);
+  background-image:
+    radial-gradient(ellipse at 0% 0%, var(--aq-body-bg2) 0%, transparent 60%),
+    radial-gradient(ellipse at 100% 100%, var(--aq-body-bg3) 0%, transparent 60%);
   min-height: 100vh;
+  transition: background 0.35s ease, color 0.35s ease;
 }
 
-/* ─── Scrollbar ─── */
+/* ══════════════════════════════════════════════════════════════════════════════
+   SCROLLBAR
+   ══════════════════════════════════════════════════════════════════════════════ */
 ::-webkit-scrollbar { width: 4px; height: 4px; }
 ::-webkit-scrollbar-track { background: transparent; }
-::-webkit-scrollbar-thumb { background: oklch(1 0 0 / 12%); border-radius: 4px; }
-::-webkit-scrollbar-thumb:hover { background: oklch(0.72 0.19 167 / 40%); }
+::-webkit-scrollbar-thumb { background: var(--aq-scrollbar); border-radius: 4px; }
+::-webkit-scrollbar-thumb:hover { background: var(--aq-scrollbar-hover); }
 
-/* ─── Glass Panel ─── */
+/* ══════════════════════════════════════════════════════════════════════════════
+   GLASS PANEL
+   ══════════════════════════════════════════════════════════════════════════════ */
 .glass-panel {
-  background: oklch(1 0 0 / 4%);
-  border: 1px solid oklch(1 0 0 / 8%);
+  background: var(--aq-glass-bg);
+  border: 1px solid var(--aq-glass-border);
   border-radius: 1rem;
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
+  transition: background 0.35s ease, border-color 0.35s ease;
 }
-
-/* ─── Input ─── */
-.aq-input {
-  width: 100%;
-  padding: 0.625rem 0.875rem;
-  border-radius: 0.75rem;
-  background: oklch(1 0 0 / 5%);
-  border: 1px solid oklch(1 0 0 / 10%);
-  color: oklch(0.9 0 0);
-  font-size: 0.8125rem;
-  outline: none;
-  transition: border-color 0.15s, background 0.15s;
-}
-.aq-input::placeholder { color: oklch(0.4 0.02 210); }
-.aq-input:focus {
-  border-color: oklch(0.72 0.19 167 / 50%);
-  background: oklch(1 0 0 / 7%);
-}
-select.aq-input { cursor: pointer; }
-textarea.aq-input { resize: vertical; }
-
-/* ─── Buttons ─── */
-.aq-btn-primary {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.4rem;
-  padding: 0.5rem 1rem;
-  border-radius: 0.75rem;
-  font-size: 0.8125rem;
-  font-weight: 700;
-  background: oklch(0.72 0.19 167);
-  color: oklch(0.08 0.015 200);
-  transition: opacity 0.15s, transform 0.15s;
-  cursor: pointer;
-  border: none;
-  white-space: nowrap;
-}
-.aq-btn-primary:hover:not(:disabled) { opacity: 0.88; transform: translateY(-1px); }
-.aq-btn-primary:disabled { opacity: 0.5; cursor: not-allowed; }
-
-.aq-btn-ghost {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.4rem;
-  padding: 0.5rem 1rem;
-  border-radius: 0.75rem;
-  font-size: 0.8125rem;
-  font-weight: 600;
-  background: oklch(1 0 0 / 5%);
-  color: oklch(0.65 0.02 210);
-  border: 1px solid oklch(1 0 0 / 8%);
-  transition: background 0.15s, color 0.15s;
-  cursor: pointer;
-}
-.aq-btn-ghost:hover { background: oklch(1 0 0 / 9%); color: oklch(0.9 0 0); }
-
-/* ─── Progress Bar ─── */
-.aq-progress {
-  height: 4px;
-  border-radius: 9999px;
-  background: oklch(1 0 0 / 8%);
-  overflow: hidden;
-}
-.aq-progress-fill {
-  height: 100%;
-  border-radius: 9999px;
-  background: oklch(0.72 0.19 167);
-}
-
-/* ─── Login Background ─── */
-.aq-login-bg {
-  background: oklch(0.07 0.02 205);
-  background-image:
-    radial-gradient(ellipse at 20% 20%, oklch(0.15 0.06 170 / 30%) 0%, transparent 55%),
-    radial-gradient(ellipse at 80% 80%, oklch(0.12 0.05 220 / 25%) 0%, transparent 55%);
-}
-
-/* ─── Glow Effects ─── */
-.glow-teal {
-  box-shadow: 0 0 40px oklch(0.72 0.19 167 / 10%), 0 1px 0 oklch(1 0 0 / 8%) inset;
-}
-
-/* ─── Avatar Ring ─── */
-.aq-avatar-ring {
-  box-shadow: 0 0 0 2px oklch(0.72 0.19 167 / 30%);
-}
-
-/* ─── Animations ─── */
-@keyframes float {
-  0%, 100% { transform: translateY(0); }
-  50% { transform: translateY(-20px); }
-}
-.animate-float { animation: float 8s ease-in-out infinite; }
-
-@keyframes pulse-ring-anim {
-  0% { box-shadow: 0 0 0 0 oklch(0.72 0.19 167 / 40%); }
-  70% { box-shadow: 0 0 0 6px oklch(0.72 0.19 167 / 0%); }
-  100% { box-shadow: 0 0 0 0 oklch(0.72 0.19 167 / 0%); }
-}
-.pulse-ring { animation: pulse-ring-anim 2s ease-out infinite; }
-
-
 .glass-panel-dark {
   background: oklch(0.06 0.015 200 / 80%);
   border: 1px solid oklch(1 0 0 / 6%);
   border-radius: 1rem;
   backdrop-filter: blur(16px);
 }
+:root.theme-light .glass-panel-dark {
+  background: oklch(1 0 0 / 85%);
+  border: 1px solid oklch(0 0 0 / 8%);
+}
 
-/* ─── Gradient Cards ─── */
+/* ══════════════════════════════════════════════════════════════════════════════
+   SIDEBAR
+   ══════════════════════════════════════════════════════════════════════════════ */
+.aq-sidebar {
+  background: var(--aq-sidebar-bg);
+  border-right: 1px solid var(--aq-sidebar-border);
+  transition: background 0.35s ease;
+}
+.aq-nav-item {
+  display: flex; align-items: center; gap: 0.75rem;
+  padding: 0.625rem 0.875rem; border-radius: 0.75rem;
+  font-size: 0.875rem; font-weight: 500;
+  color: var(--aq-nav-color);
+  transition: all 0.2s ease; cursor: pointer; text-decoration: none;
+}
+.aq-nav-item:hover {
+  background: var(--aq-nav-hover-bg);
+  color: var(--aq-nav-hover-color);
+}
+.aq-nav-item.active {
+  background: linear-gradient(135deg, oklch(0.72 0.19 167 / 18%), oklch(0.6 0.16 187 / 12%));
+  color: var(--primary);
+  border: 1px solid oklch(0.72 0.19 167 / 20%);
+}
+:root.theme-light .aq-nav-item.active {
+  background: linear-gradient(135deg, oklch(0.60 0.17 167 / 12%), oklch(0.5 0.14 187 / 8%));
+  color: var(--primary);
+  border: 1px solid oklch(0.60 0.17 167 / 25%);
+}
+
+/* ══════════════════════════════════════════════════════════════════════════════
+   INPUTS
+   ══════════════════════════════════════════════════════════════════════════════ */
+.aq-input {
+  width: 100%;
+  padding: 0.625rem 0.875rem;
+  border-radius: 0.75rem;
+  background: var(--aq-input-bg);
+  border: 1px solid var(--aq-input-border);
+  color: var(--aq-input-color);
+  font-size: 0.8125rem; outline: none;
+  transition: border-color 0.15s, background 0.15s, box-shadow 0.15s;
+}
+.aq-input::placeholder { color: var(--aq-input-placeholder); }
+.aq-input:focus {
+  border-color: var(--aq-input-focus-border);
+  background: var(--aq-input-bg);
+  box-shadow: 0 0 0 3px color-mix(in oklch, var(--primary) 10%, transparent);
+}
+select.aq-input { cursor: pointer; }
+textarea.aq-input { resize: vertical; }
+.aq-input:disabled { opacity: 0.45; cursor: not-allowed; }
+
+/* ══════════════════════════════════════════════════════════════════════════════
+   BUTTONS
+   ══════════════════════════════════════════════════════════════════════════════ */
+.aq-btn-primary {
+  display: inline-flex; align-items: center; gap: 0.4rem;
+  padding: 0.5rem 1rem; border-radius: 0.75rem;
+  font-size: 0.8125rem; font-weight: 700;
+  background: var(--primary);
+  color: var(--primary-foreground);
+  transition: opacity 0.15s, transform 0.15s, box-shadow 0.15s;
+  cursor: pointer; border: none; white-space: nowrap;
+}
+.aq-btn-primary:hover:not(:disabled) {
+  opacity: 0.9; transform: translateY(-1px);
+  box-shadow: 0 8px 20px color-mix(in oklch, var(--primary) 35%, transparent);
+}
+.aq-btn-primary:disabled { opacity: 0.5; cursor: not-allowed; }
+
+.aq-btn-ghost {
+  display: inline-flex; align-items: center; gap: 0.4rem;
+  padding: 0.5rem 1rem; border-radius: 0.75rem;
+  font-size: 0.8125rem; font-weight: 600;
+  background: var(--aq-ghost-bg);
+  color: var(--aq-ghost-color);
+  border: 1px solid var(--aq-glass-border);
+  transition: background 0.15s, color 0.15s; cursor: pointer;
+}
+.aq-btn-ghost:hover { background: var(--aq-ghost-hover); color: var(--aq-text-primary); }
+
+/* ══════════════════════════════════════════════════════════════════════════════
+   PROGRESS BAR
+   ══════════════════════════════════════════════════════════════════════════════ */
+.aq-progress {
+  height: 4px; border-radius: 9999px;
+  background: var(--aq-progress-track); overflow: hidden;
+}
+.aq-progress-fill { height: 100%; border-radius: 9999px; transition: width 0.8s ease; }
+
+/* ══════════════════════════════════════════════════════════════════════════════
+   STAT CARDS
+   ══════════════════════════════════════════════════════════════════════════════ */
+.aq-stat-card {
+  background: var(--aq-stat-bg);
+  border: 1px solid var(--aq-stat-border);
+  border-radius: 1rem; padding: 1.25rem;
+  transition: all 0.25s ease;
+}
+.aq-stat-card:hover {
+  background: var(--aq-stat-hover-bg);
+  border-color: color-mix(in oklch, var(--primary) 30%, transparent);
+  transform: translateY(-2px);
+}
+
+/* ══════════════════════════════════════════════════════════════════════════════
+   TABLE
+   ══════════════════════════════════════════════════════════════════════════════ */
+.aq-table th {
+  font-size: 0.65rem; text-transform: uppercase; letter-spacing: 0.08em;
+  font-weight: 700; color: var(--aq-table-th-color);
+  padding: 0.75rem 1rem;
+  border-bottom: 1px solid var(--aq-table-th-border);
+  background: var(--aq-table-th-bg);
+}
+.aq-table td {
+  padding: 0.875rem 1rem;
+  border-bottom: 1px solid var(--aq-table-td-border);
+  font-size: 0.875rem; color: var(--aq-table-td-color);
+}
+.aq-table tr:hover td { background: var(--aq-table-hover); }
+
+/* ══════════════════════════════════════════════════════════════════════════════
+   BADGES
+   ══════════════════════════════════════════════════════════════════════════════ */
+.aq-badge {
+  display: inline-flex; align-items: center; gap: 0.25rem;
+  padding: 0.2rem 0.6rem; border-radius: 9999px;
+  font-size: 0.625rem; font-weight: 700;
+  text-transform: uppercase; letter-spacing: 0.06em;
+}
+.aq-badge-green  { background: oklch(0.72 0.19 167 / 15%); color: oklch(0.72 0.19 167); border: 1px solid oklch(0.72 0.19 167 / 25%); }
+.aq-badge-red    { background: oklch(0.65 0.22 25 / 15%); color: oklch(0.75 0.18 25); border: 1px solid oklch(0.65 0.22 25 / 25%); }
+.aq-badge-amber  { background: oklch(0.78 0.17 70 / 15%); color: oklch(0.78 0.17 70); border: 1px solid oklch(0.78 0.17 70 / 25%); }
+.aq-badge-blue   { background: oklch(0.65 0.18 240 / 15%); color: oklch(0.75 0.16 240); border: 1px solid oklch(0.65 0.18 240 / 25%); }
+.aq-badge-purple { background: oklch(0.65 0.2 295 / 15%); color: oklch(0.78 0.17 295); border: 1px solid oklch(0.65 0.2 295 / 25%); }
+/* Light mode badge adjustments */
+:root.theme-light .aq-badge-green  { background: oklch(0.60 0.17 167 / 12%); color: oklch(0.35 0.16 167); border-color: oklch(0.60 0.17 167 / 25%); }
+:root.theme-light .aq-badge-red    { background: oklch(0.58 0.22 25 / 12%); color: oklch(0.40 0.18 25); border-color: oklch(0.58 0.22 25 / 25%); }
+:root.theme-light .aq-badge-amber  { background: oklch(0.70 0.17 70 / 12%); color: oklch(0.40 0.17 70); border-color: oklch(0.70 0.17 70 / 25%); }
+:root.theme-light .aq-badge-blue   { background: oklch(0.60 0.18 240 / 12%); color: oklch(0.35 0.16 240); border-color: oklch(0.60 0.18 240 / 25%); }
+:root.theme-light .aq-badge-purple { background: oklch(0.60 0.2 295 / 12%); color: oklch(0.38 0.18 295); border-color: oklch(0.60 0.2 295 / 25%); }
+
+/* ══════════════════════════════════════════════════════════════════════════════
+   GRADIENT CARDS
+   ══════════════════════════════════════════════════════════════════════════════ */
 .card-teal {
   background: linear-gradient(135deg, oklch(0.72 0.19 167 / 15%), oklch(0.6 0.16 187 / 10%));
   border: 1px solid oklch(0.72 0.19 167 / 20%);
 }
-
 .card-emerald {
   background: linear-gradient(135deg, oklch(0.65 0.18 160 / 15%), oklch(0.55 0.15 165 / 10%));
   border: 1px solid oklch(0.65 0.18 160 / 20%);
 }
-
-/* ─── Sidebar Styles ─── */
-.aq-sidebar {
-  background: oklch(0.07 0.018 205);
-  border-right: 1px solid oklch(1 0 0 / 6%);
+:root.theme-light .card-teal {
+  background: linear-gradient(135deg, oklch(0.60 0.17 167 / 8%), oklch(0.5 0.14 187 / 6%));
 }
 
-.aq-nav-item {
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
-  padding: 0.625rem 0.875rem;
-  border-radius: 0.75rem;
-  font-size: 0.875rem;
-  font-weight: 500;
-  color: oklch(0.6 0.02 210);
-  transition: all 0.2s ease;
-  cursor: pointer;
-  text-decoration: none;
+/* ══════════════════════════════════════════════════════════════════════════════
+   LOGIN BACKGROUND
+   ══════════════════════════════════════════════════════════════════════════════ */
+.aq-login-bg {
+  background: var(--aq-login-bg);
+  background-image:
+    radial-gradient(ellipse at 20% 20%, var(--aq-login-glow1) 0%, transparent 50%),
+    radial-gradient(ellipse at 80% 80%, var(--aq-login-glow2) 0%, transparent 50%),
+    radial-gradient(ellipse at 50% 0%, var(--aq-login-glow3) 0%, transparent 60%);
 }
 
-.aq-nav-item:hover {
-  background: oklch(1 0 0 / 5%);
-  color: oklch(0.9 0 0);
+/* ══════════════════════════════════════════════════════════════════════════════
+   GLOW & AVATAR
+   ══════════════════════════════════════════════════════════════════════════════ */
+.glow-teal {
+  box-shadow: 0 0 30px color-mix(in oklch, var(--primary) 20%, transparent);
 }
-
-.aq-nav-item.active {
-  background: linear-gradient(135deg, oklch(0.72 0.19 167 / 20%), oklch(0.6 0.16 187 / 15%));
-  color: oklch(0.72 0.19 167);
-  border: 1px solid oklch(0.72 0.19 167 / 20%);
-}
-
-/* ─── Stat Cards ─── */
-.aq-stat-card {
-  background: oklch(1 0 0 / 4%);
-  border: 1px solid oklch(1 0 0 / 8%);
-  border-radius: 1rem;
-  padding: 1.25rem;
-  transition: all 0.25s ease;
-}
-
-.aq-stat-card:hover {
-  background: oklch(1 0 0 / 6%);
-  border-color: oklch(0.72 0.19 167 / 25%);
-  transform: translateY(-2px);
-}
-
-/* ─── Table ─── */
-.aq-table th {
-  font-size: 0.65rem;
-  text-transform: uppercase;
-  letter-spacing: 0.08em;
-  font-weight: 700;
-  color: oklch(0.5 0.02 210);
-  padding: 0.75rem 1rem;
-  border-bottom: 1px solid oklch(1 0 0 / 6%);
-  background: oklch(1 0 0 / 2%);
-}
-
-.aq-table td {
-  padding: 0.875rem 1rem;
-  border-bottom: 1px solid oklch(1 0 0 / 5%);
-  font-size: 0.875rem;
-  color: oklch(0.85 0 0);
-}
-
-.aq-table tr:hover td {
-  background: oklch(1 0 0 / 3%);
-}
-
-/* ─── Progress Bar ─── */
-.aq-progress {
-  height: 4px;
-  background: oklch(1 0 0 / 8%);
-  border-radius: 9999px;
-  overflow: hidden;
-}
-
-.aq-progress-fill {
-  height: 100%;
-  border-radius: 9999px;
-  transition: width 0.8s ease;
-}
-
-/* ─── Badge ─── */
-.aq-badge {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.25rem;
-  padding: 0.2rem 0.6rem;
-  border-radius: 9999px;
-  font-size: 0.625rem;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.06em;
-}
-
-.aq-badge-green { background: oklch(0.72 0.19 167 / 15%); color: oklch(0.72 0.19 167); border: 1px solid oklch(0.72 0.19 167 / 20%); }
-.aq-badge-red { background: oklch(0.65 0.22 25 / 15%); color: oklch(0.75 0.18 25); border: 1px solid oklch(0.65 0.22 25 / 20%); }
-.aq-badge-amber { background: oklch(0.78 0.17 70 / 15%); color: oklch(0.78 0.17 70); border: 1px solid oklch(0.78 0.17 70 / 20%); }
-.aq-badge-blue { background: oklch(0.65 0.18 240 / 15%); color: oklch(0.75 0.16 240); border: 1px solid oklch(0.65 0.18 240 / 20%); }
-.aq-badge-purple { background: oklch(0.65 0.2 295 / 15%); color: oklch(0.78 0.17 295); border: 1px solid oklch(0.65 0.2 295 / 20%); }
-
-/* ─── Button ─── */
-.aq-btn-primary {
-  background: oklch(0.72 0.19 167);
-  color: oklch(0.08 0.015 200);
-  border: none;
-  padding: 0.625rem 1.25rem;
-  border-radius: 0.75rem;
-  font-weight: 700;
-  font-size: 0.875rem;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  display: inline-flex;
-  align-items: center;
-  gap: 0.5rem;
-}
-
-.aq-btn-primary:hover {
-  background: oklch(0.78 0.17 167);
-  transform: translateY(-1px);
-  box-shadow: 0 8px 20px oklch(0.72 0.19 167 / 30%);
-}
-
-.aq-btn-ghost {
-  background: oklch(1 0 0 / 5%);
-  color: oklch(0.75 0 0);
-  border: 1px solid oklch(1 0 0 / 8%);
-  padding: 0.625rem 1.25rem;
-  border-radius: 0.75rem;
-  font-weight: 600;
-  font-size: 0.875rem;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  display: inline-flex;
-  align-items: center;
-  gap: 0.5rem;
-}
-
-.aq-btn-ghost:hover {
-  background: oklch(1 0 0 / 8%);
-  color: oklch(0.9 0 0);
-}
-
-/* ─── Input ─── */
-.aq-input {
-  width: 100%;
-  background: oklch(1 0 0 / 5%);
-  border: 1px solid oklch(1 0 0 / 10%);
-  border-radius: 0.75rem;
-  padding: 0.625rem 1rem;
-  font-size: 0.875rem;
-  color: oklch(0.9 0 0);
-  outline: none;
-  transition: border-color 0.2s;
-}
-
-.aq-input:focus {
-  border-color: oklch(0.72 0.19 167 / 50%);
-  box-shadow: 0 0 0 3px oklch(0.72 0.19 167 / 10%);
-}
-
-.aq-input::placeholder {
-  color: oklch(0.45 0.02 210);
-}
-
-.aq-input:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-}
-
-/* ─── Avatar Ring ─── */
 .aq-avatar-ring {
-  box-shadow: 0 0 0 3px oklch(0.07 0.018 205), 0 0 0 5px oklch(0.72 0.19 167 / 40%);
+  box-shadow: 0 0 0 2px var(--aq-avatar-ring), 0 0 0 4px color-mix(in oklch, var(--primary) 40%, transparent);
 }
 
-/* ─── Gradient Text ─── */
+/* ══════════════════════════════════════════════════════════════════════════════
+   GRADIENT TEXT
+   ══════════════════════════════════════════════════════════════════════════════ */
 .aq-gradient-text {
-  background: linear-gradient(135deg, oklch(0.72 0.19 167), oklch(0.6 0.16 187));
+  background: linear-gradient(135deg, var(--primary), oklch(0.6 0.16 187));
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
 }
 
-/* ─── Glow Effects ─── */
-.glow-teal {
-  box-shadow: 0 0 30px oklch(0.72 0.19 167 / 20%);
+/* ══════════════════════════════════════════════════════════════════════════════
+   THEME TOGGLE BUTTON
+   ══════════════════════════════════════════════════════════════════════════════ */
+.aq-theme-toggle {
+  position: relative;
+  width: 2.5rem; height: 1.4rem;
+  border-radius: 9999px;
+  cursor: pointer; border: none; padding: 0;
+  transition: background 0.3s ease;
+  background: var(--aq-glass-border);
+}
+.aq-theme-toggle-thumb {
+  position: absolute;
+  top: 0.15rem; left: 0.15rem;
+  width: 1.1rem; height: 1.1rem;
+  border-radius: 9999px;
+  background: var(--primary);
+  transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+:root.theme-light .aq-theme-toggle-thumb {
+  transform: translateX(1.1rem);
 }
 
-/* ─── Login Screen ─── */
-.aq-login-bg {
-  background: oklch(0.07 0.018 205);
-  background-image:
-    radial-gradient(ellipse at 20% 20%, oklch(0.72 0.19 167 / 12%) 0%, transparent 50%),
-    radial-gradient(ellipse at 80% 80%, oklch(0.5 0.15 240 / 10%) 0%, transparent 50%),
-    radial-gradient(ellipse at 50% 0%, oklch(0.6 0.16 187 / 8%) 0%, transparent 60%);
-}
-
-/* ─── Animations ─── */
+/* ══════════════════════════════════════════════════════════════════════════════
+   ANIMATIONS
+   ══════════════════════════════════════════════════════════════════════════════ */
 @keyframes shimmer {
   0% { background-position: -200% 0; }
   100% { background-position: 200% 0; }
 }
-
 .shimmer {
   background: linear-gradient(90deg, oklch(1 0 0 / 0%) 25%, oklch(1 0 0 / 5%) 50%, oklch(1 0 0 / 0%) 75%);
   background-size: 200% 100%;
@@ -443,27 +486,123 @@ textarea.aq-input { resize: vertical; }
 }
 
 @keyframes pulse-ring {
-  0% { box-shadow: 0 0 0 0 oklch(0.72 0.19 167 / 40%); }
-  70% { box-shadow: 0 0 0 8px oklch(0.72 0.19 167 / 0%); }
-  100% { box-shadow: 0 0 0 0 oklch(0.72 0.19 167 / 0%); }
+  0%   { box-shadow: 0 0 0 0 color-mix(in oklch, var(--primary) 40%, transparent); }
+  70%  { box-shadow: 0 0 0 8px color-mix(in oklch, var(--primary) 0%, transparent); }
+  100% { box-shadow: 0 0 0 0 color-mix(in oklch, var(--primary) 0%, transparent); }
 }
-
 .pulse-ring { animation: pulse-ring 2s ease-out infinite; }
 
 @keyframes float {
   0%, 100% { transform: translateY(0); }
-  50% { transform: translateY(-6px); }
+  50%        { transform: translateY(-6px); }
 }
-
 .animate-float { animation: float 4s ease-in-out infinite; }
 
-/* ─── Overriding Shadcn components for dark theme ─── */
-.bg-background { background-color: oklch(0.08 0.015 200) !important; }
-.bg-card { background-color: oklch(0.11 0.015 210) !important; }
-.text-foreground { color: oklch(0.95 0 0) !important; }
-.text-muted-foreground { color: oklch(0.55 0.02 210) !important; }
-.border-border { border-color: oklch(1 0 0 / 8%) !important; }
+/* ══════════════════════════════════════════════════════════════════════════════
+   SHADCN OVERRIDES
+   ══════════════════════════════════════════════════════════════════════════════ */
+.bg-background { background-color: var(--aq-body-bg) !important; }
+.bg-card { background-color: var(--card) !important; }
+.text-foreground { color: var(--foreground) !important; }
+.text-muted-foreground { color: var(--muted-foreground) !important; }
+.border-border { border-color: var(--border) !important; }
 
-/* Dialog/Modal dark overrides */
 [data-radix-popper-content-wrapper] { z-index: 100 !important; }
-[role="dialog"] { background: oklch(0.11 0.015 210) !important; border: 1px solid oklch(1 0 0 / 10%) !important; }
+[role="dialog"] { background: var(--card) !important; border: 1px solid var(--border) !important; }
+
+/* ── Light mode: white text on dark buttons stays readable ──────────────────── */
+:root.theme-light .aq-btn-primary { color: oklch(0.99 0 0); }
+
+/* ── Light mode: hard-coded dark inline styles fix ──────────────────────────── */
+:root.theme-light h1,
+:root.theme-light h2,
+:root.theme-light h3 { color: var(--aq-text-primary); }
+
+/* ══════════════════════════════════════════════════════════════════════════════
+   ENHANCED SIDEBAR STYLES
+   ══════════════════════════════════════════════════════════════════════════════ */
+
+/* Collapsed sidebar: icon-only rail */
+.aq-sidebar {
+  transition: width 0.28s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Nav group header hover */
+.aq-nav-group-header {
+  display: flex; align-items: center; gap: 0.5rem;
+  padding: 0.25rem 0.25rem 0.375rem;
+  border-radius: 0.5rem;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+.aq-nav-group-header:hover {
+  background: var(--aq-nav-hover-bg);
+}
+
+/* Sidebar tooltip overlay in collapsed mode */
+.aq-nav-tooltip {
+  position: absolute;
+  left: calc(100% + 12px);
+  top: 50%;
+  transform: translateY(-50%);
+  pointer-events: none;
+  z-index: 200;
+  opacity: 0;
+  white-space: nowrap;
+  transition: opacity 0.15s ease;
+}
+button:hover > .aq-nav-tooltip,
+a:hover > .aq-nav-tooltip {
+  opacity: 1;
+}
+
+/* Active nav item left bar glow */
+[data-nav-active="true"]::before {
+  content: '';
+  position: absolute;
+  left: 0; top: 50%; transform: translateY(-50%);
+  width: 3px; height: 60%;
+  border-radius: 9999px;
+  background: var(--primary);
+  box-shadow: 0 0 8px color-mix(in oklch, var(--primary) 60%, transparent);
+}
+
+/* User profile card live dot */
+.aq-online-dot {
+  width: 8px; height: 8px;
+  border-radius: 9999px;
+  background: oklch(0.72 0.19 167);
+  flex-shrink: 0;
+}
+
+/* Scrollbar in nav */
+nav::-webkit-scrollbar { width: 2px; }
+nav::-webkit-scrollbar-thumb { background: var(--aq-scrollbar); border-radius: 2px; }
+
+/* Header breadcrumb path */
+.aq-breadcrumb-group {
+  font-size: 0.625rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+}
+
+/* Light mode sidebar card overrides */
+:root.theme-light .aq-sidebar {
+  box-shadow: 1px 0 0 var(--aq-sidebar-border), 2px 0 12px oklch(0 0 0 / 4%);
+}
+
+/* Sidebar section divider (collapsed mode) */
+.aq-sidebar-divider {
+  margin: 0.5rem auto;
+  width: 1.25rem; height: 1px;
+  border-radius: 9999px;
+  background: var(--aq-glass-border);
+}
+
+/* Nav active indicator animation */
+@keyframes nav-appear {
+  from { opacity: 0; transform: translateX(-4px); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+.aq-nav-active { animation: nav-appear 0.2s ease; }

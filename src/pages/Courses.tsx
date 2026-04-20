@@ -1,7 +1,5 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { useAuth } from '../context/AuthContext';
-import { db, handleFirestoreError, OperationType } from '../firebase';
-import { collection, query, onSnapshot } from 'firebase/firestore';
 import { motion } from 'motion/react';
 import { Play, BookOpen, Clock, Search, Award, Star, Users, ChevronRight, Zap } from 'lucide-react';
 import { toast } from 'sonner';
@@ -18,6 +16,22 @@ interface Course {
   enrolled?: number;
 }
 
+// ── Static course catalogue (replace with API call when /courses endpoint is ready) ──
+const STATIC_COURSES: Course[] = [
+  { id: 'c1',  title: 'Shrimp Disease Identification & Management',    description: 'Master identifying common shrimp diseases and implement effective treatment protocols used by top aquaculture farms across Andhra Pradesh.', category: 'Aquaculture', duration: '6h 30m', level: 'Advanced',      rating: 4.8, enrolled: 2500 },
+  { id: 'c2',  title: 'Water Quality Monitoring Fundamentals',         description: 'Learn the critical water parameters — DO, pH, ammonia, salinity — and how to control them for optimal shrimp growth.',               category: 'Aquaculture', duration: '3h 15m', level: 'Beginner',      rating: 4.6, enrolled: 1800 },
+  { id: 'c3',  title: 'AquaGrow App & IoT Device Training',            description: 'Full walkthrough of the AquaGrow mobile app, pond logging, alert configuration, and IoT sensor management.',                           category: 'IoT',         duration: '2h 00m', level: 'Intermediate',  rating: 4.7, enrolled: 1200 },
+  { id: 'c4',  title: 'Sales Techniques for Aquaculture Products',     description: 'Practical sales frameworks for field executives — pitch scripting, objection handling, and closing deals with farmers.',                category: 'Sales',       duration: '4h 00m', level: 'Intermediate',  rating: 4.5, enrolled: 980  },
+  { id: 'c5',  title: 'Feed Management & FCR Optimisation',            description: 'Understand feed conversion ratios, feeding schedules, and best practices to maximise biomass while minimising cost.',                   category: 'Aquaculture', duration: '2h 45m', level: 'Intermediate',  rating: 4.4, enrolled: 1500 },
+  { id: 'c6',  title: 'Warehouse & Inventory Best Practices',          description: 'Standard procedures for stock management, FIFO rotation, expiry tracking, and cold-chain handling for aquaculture inputs.',             category: 'Operations',  duration: '1h 30m', level: 'Beginner',      rating: 4.3, enrolled: 640  },
+  { id: 'c7',  title: 'Order Processing & Customer Communication',     description: 'Step-by-step guide for order executives — from confirmation to dispatch coordination and proactive farmer updates.',                    category: 'Operations',  duration: '1h 45m', level: 'Beginner',      rating: 4.5, enrolled: 720  },
+  { id: 'c8',  title: 'Shrimp Health & Biosecurity Protocols',         description: 'Critical biosecurity measures to prevent disease outbreaks — pond preparation, seed selection, and health monitoring cycles.',          category: 'Health',      duration: '5h 00m', level: 'Advanced',      rating: 4.9, enrolled: 3100 },
+  { id: 'c9',  title: 'Last-Mile Delivery & Route Planning',           description: 'Efficient route planning, delivery documentation, and handling failed deliveries in rural AP & Telangana zones.',                       category: 'Operations',  duration: '1h 15m', level: 'Beginner',      rating: 4.2, enrolled: 480  },
+  { id: 'c10', title: 'CRM & Customer Retention Strategies',           description: 'Build long-term farmer relationships through follow-up, WhatsApp engagement, and personalised support using CRM tools.',               category: 'Sales',       duration: '2h 30m', level: 'Intermediate',  rating: 4.6, enrolled: 860  },
+  { id: 'c11', title: 'Aerator Maintenance & Troubleshooting',         description: 'Hands-on guide for field technicians — routine servicing, impeller replacement, and diagnosing common aerator failures.',              category: 'IoT',         duration: '3h 00m', level: 'Intermediate',  rating: 4.7, enrolled: 920  },
+  { id: 'c12', title: 'Financial Basics for Aquaculture Operations',   description: 'Cost accounting, ROI calculation, and profitability analysis tailored to shrimp farming cycles.',                                      category: 'Operations',  duration: '2h 15m', level: 'Intermediate',  rating: 4.4, enrolled: 560  },
+];
+
 const CATEGORY_COLORS: Record<string, string> = {
   'Aquaculture':  'oklch(0.72 0.19 167)',
   'Sales':        'oklch(0.75 0.16 240)',
@@ -27,29 +41,13 @@ const CATEGORY_COLORS: Record<string, string> = {
   'default':      'oklch(0.65 0.18 240)',
 };
 
-const FEATURED = {
-  title: 'Shrimp Disease Identification & Management',
-  description: 'Master identifying common shrimp diseases and implement effective treatment protocols used by top aquaculture farms across Andhra Pradesh.',
-  category: 'Aquaculture',
-  rating: 4.8,
-  enrolled: 2500,
-  duration: '6h 30m',
-  level: 'Advanced',
-};
+const FEATURED = STATIC_COURSES[0];
 
 const Courses: React.FC = () => {
   const { employee } = useAuth();
-  const [courses, setCourses] = useState<Course[]>([]);
+  const [courses] = useState<Course[]>(STATIC_COURSES);
   const [search, setSearch] = useState('');
   const [activeFilter, setActiveFilter] = useState('All');
-
-  useEffect(() => {
-    const q = query(collection(db, 'courses'));
-    const unsub = onSnapshot(q, snap => {
-      setCourses(snap.docs.map(d => ({ id: d.id, ...d.data() } as Course)));
-    }, err => handleFirestoreError(err, OperationType.LIST, 'courses'));
-    return () => unsub();
-  }, []);
 
   const categories = ['All', ...Array.from(new Set(courses.map(c => c.category).filter(Boolean)))];
 
