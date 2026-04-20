@@ -215,7 +215,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   }, []); // eslint-disable-line
 
   const refreshEmployee = async () => {
-    if (user) await fetchEmployee(user);
+    if (user) {
+      // Firebase session — re-fetch from Firestore
+      await fetchEmployee(user);
+    } else {
+      // JWT session — re-fetch from HRMS API
+      const hrmsToken = localStorage.getItem('hrms_token');
+      if (hrmsToken) await fetchEmployeeFromApi();
+    }
   };
 
   const login = async () => {

@@ -98,7 +98,8 @@ const Profile: React.FC = () => {
         // No bank details — show onboarding banner
         setShowOnboarding(true);
       }
-    } catch {
+    } catch (err: any) {
+      console.warn('[Profile] loadProfile failed:', err.message);
       setName(employee?.name ?? '');
       setPhone(employee?.phone ?? '');
     } finally {
@@ -110,19 +111,36 @@ const Profile: React.FC = () => {
 
   const profile = liveProfile ?? employee;
 
+  /**
+   * Resolve the MongoDB _id to use in PUT /employees/:id
+   * Priority: liveProfile._id (from /auth/me) → employee.uid (mapped from _id in AuthContext)
+   * The AuthContext maps emp._id → employee.uid during loginWithEmpId
+   */
+  const getMongoId = (): string => {
+    const id =
+      liveProfile?._id ??
+      (employee as any)?._id ??
+      employee?.uid ?? // AuthContext stores MongoDB _id here for JWT sessions
+      '';
+    if (!id) console.error('[Profile] Could not resolve MongoDB employee ID!');
+    return id;
+  };
+
   // ── Save personal ─────────────────────────────────────────────────────────
   const handleSavePersonal = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!employee) return;
     setSavingPersonal(true);
     try {
-      const id = (employee as any)._id ?? (employee as any).id ?? employee.uid;
+      const id = getMongoId();
+      if (!id) { toast.error('Cannot identify employee — please log out and back in'); return; }
+      console.log('[Profile] Updating employee ID:', id, { name, phone });
       await hrmsApi.employees.update(id, { name, phone });
       toast.success('✅ Personal details updated!');
       setEditingPersonal(false);
       await loadProfile();
-      await refreshEmployee();
     } catch (err: any) {
+      console.error('[Profile] Save personal failed:', err);
       toast.error(err.message ?? 'Failed to update profile');
     } finally {
       setSavingPersonal(false);
@@ -142,20 +160,28 @@ const Profile: React.FC = () => {
 
     setSavingBank(true);
     try {
-      const id = (employee as any)._id ?? (employee as any).id ?? (employee as any).uid;
-      await hrmsApi.employees.update(id, {
+      const id = getMongoId();
+      if (!id) { toast.error('Cannot identify employee — please log out and back in'); return; }
+
+      const payload = {
         bankDetails: {
           ...bank,
           ifscCode: bank.ifscCode.toUpperCase(),
           panCard:  bank.panCard.toUpperCase(),
         },
-      });
-      setBankSaved({ ...bank, ifscCode: bank.ifscCode.toUpperCase(), panCard: bank.panCard.toUpperCase() });
-      setBank(b => ({ ...b, ifscCode: b.ifscCode.toUpperCase(), panCard: b.panCard.toUpperCase() }));
+      };
+      console.log('[Profile] Saving bank details to employee ID:', id, payload);
+      await hrmsApi.employees.update(id, payload);
+
+      const saved = { ...bank, ifscCode: bank.ifscCode.toUpperCase(), panCard: bank.panCard.toUpperCase() };
+      setBankSaved(saved);
+      setBank(saved);
       setEditingBank(false);
       setShowOnboarding(false);
       toast.success('✅ Bank details saved securely!');
+      await loadProfile(); // re-fetch to confirm persistence
     } catch (err: any) {
+      console.error('[Profile] Save bank failed:', err);
       toast.error(err.message ?? 'Failed to save bank details');
     } finally {
       setSavingBank(false);
