@@ -136,30 +136,40 @@ const Attendance: React.FC = () => {
   }, []);
 
   // Fetch attendance + leaves
+  // Always fetch current month separately so todayRecord is always accurate
   const fetchAll = useCallback(async () => {
     setFetching(true);
     try {
-      const year = calView === 'year' ? calYear : calYear;
-      // For year view fetch whole year; for month view fetch just that month
-      const monthParam = calView === 'month'
-        ? `${calYear}-${String(calMonth + 1).padStart(2, '0')}`
-        : undefined;
+      const currentMonthParam = `${new Date().getFullYear()}-${String(new Date().getMonth() + 1).padStart(2, '0')}`;
+      const calMonthParam     = `${calYear}-${String(calMonth + 1).padStart(2, '0')}`;
 
-      const [attData, leaveData] = await Promise.all([
-        hrmsApi.attendance.list(monthParam ? { month: monthParam } : {}),
+      // Always fetch today's month for todayRecord; also fetch requested month for calendar
+      const fetchParams = calMonthParam === currentMonthParam
+        ? [hrmsApi.attendance.list({ month: calMonthParam })]
+        : [
+            hrmsApi.attendance.list({ month: calMonthParam }),
+            hrmsApi.attendance.list({ month: currentMonthParam }),
+          ];
+
+      const [calData, leaveData, todayMonthData] = await Promise.all([
+        fetchParams[0],
         hrmsApi.leaves.list({ status: 'approved' }),
+        fetchParams[1] ?? Promise.resolve(null),
       ]);
 
-      setRecords(attData);
+      setRecords(calData);
       setLeaves(leaveData);
+
+      // todayRecord: look in the dedicated today-month fetch (or calData if same month)
+      const todaySource = todayMonthData ?? calData;
       const todayStr = today();
-      setTodayRecord(attData.find((r: AttendanceRecord) => r.date?.startsWith(todayStr)) ?? null);
+      setTodayRecord(todaySource.find((r: AttendanceRecord) => r.date?.startsWith(todayStr)) ?? null);
     } catch (err: any) {
       toast.error(err.message ?? 'Failed to load attendance');
     } finally {
       setFetching(false);
     }
-  }, [calYear, calMonth, calView]);
+  }, [calYear, calMonth]);
 
   useEffect(() => { fetchAll(); }, [fetchAll]);
 
@@ -204,26 +214,42 @@ const Attendance: React.FC = () => {
     if (isFrozen(todayDate, leaves)) {
       toast.error('Today is a holiday or leave day'); return;
     }
+    // Guard: already checked in
+    if (alreadyIn) {
+      toast.warning('You have already checked in today'); return;
+    }
     setLoading(true);
     try {
       await hrmsApi.attendance.checkIn();
       toast.success('✅ Checked in! Good morning.');
       await fetchAll();
-    } catch (err: any) { toast.error(err.message ?? 'Failed to check in'); }
-    finally { setLoading(false); }
+    } catch (err: any) {
+      // Surface exact server message (e.g. "Already checked in")
+      toast.error(err.message ?? 'Failed to check in');
+    } finally { setLoading(false); }
   };
 
   const handleCheckOut = async () => {
+    // Guard: not checked in yet
+    if (!alreadyIn) {
+      toast.error('You must check in first before checking out'); return;
+    }
+    // Guard: already checked out
+    if (alreadyOut) {
+      toast.warning('You have already checked out today'); return;
+    }
     if (isOvertime) {
-      toast.warning(`Maximum ${MAX_WORK_HOURS}h/day logged. Please check out.`);
+      toast.warning(`⚠ Maximum ${MAX_WORK_HOURS}h/day reached — please check out now!`);
     }
     setLoading(true);
     try {
       await hrmsApi.attendance.checkOut();
       toast.success('✅ Checked out. Great work today!');
       await fetchAll();
-    } catch (err: any) { toast.error(err.message ?? 'Failed to check out'); }
-    finally { setLoading(false); }
+    } catch (err: any) {
+      // Surface exact server message (e.g. "No check-in found", "Already checked out")
+      toast.error(err.message ?? 'Failed to check out');
+    } finally { setLoading(false); }
   };
 
   // Calendar nav
