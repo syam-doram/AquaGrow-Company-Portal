@@ -15,22 +15,27 @@ const ROLE_COLORS: Record<string, string> = {
 
 const AdminReports: React.FC = () => {
   const [employees, setEmployees] = useState<any[]>([]);
+  const [dashStats, setDashStats] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
 
-  const fetchEmployees = useCallback(async () => {
+  const fetchData = useCallback(async () => {
     setLoading(true);
     try {
-      const data = await hrmsApi.employees.list();
-      setEmployees(data.map((e: any) => ({ ...e, id: e._id ?? e.id })));
+      const [empData, stats] = await Promise.all([
+        hrmsApi.employees.list(),
+        hrmsApi.dashboard.stats(),
+      ]);
+      setEmployees(empData.map((e: any) => ({ ...e, id: e._id ?? e.id })));
+      setDashStats(stats);
     } catch (err: any) {
-      toast.error(err.message ?? 'Failed to load employees');
+      toast.error(err.message ?? 'Failed to load reports');
     } finally {
       setLoading(false);
     }
   }, []);
 
-  useEffect(() => { fetchEmployees(); }, [fetchEmployees]);
+  useEffect(() => { fetchData(); }, [fetchData]);
 
   const exportReport = (type: string) => {
     toast.info(`Generating ${type} report…`);
@@ -41,9 +46,16 @@ const AdminReports: React.FC = () => {
     !search || e.name?.toLowerCase().includes(search.toLowerCase()) || e.email?.toLowerCase().includes(search.toLowerCase())
   );
 
-  const adminCount  = employees.filter(e => e.role === 'admin').length;
-  const managerCount = employees.filter(e => e.role === 'manager').length;
-  const empCount    = employees.filter(e => e.role === 'employee').length;
+  // HRMS roles — super_admin and hr_manager are admin-tier
+  const ADMIN_ROLES  = ['super_admin', 'hr_manager'];
+  const MANAGER_ROLES = ['finance_manager', 'operations_manager', 'support_agent'];
+  const adminCount   = employees.filter(e => ADMIN_ROLES.includes(e.role)).length;
+  const managerCount = employees.filter(e => MANAGER_ROLES.includes(e.role)).length;
+  const empCount     = employees.filter(e => e.role === 'employee').length;
+
+  const attendanceRate = dashStats?.attendanceRate ?? '—';
+  const openTickets    = dashStats?.openTickets ?? '—';
+  const activeCount    = dashStats?.activeEmployees ?? employees.filter(e => e.status === 'active').length;
 
   return (
     <div className="space-y-6">
@@ -54,6 +66,9 @@ const AdminReports: React.FC = () => {
           <p className="text-sm text-[oklch(0.5_0.02_210)] mt-0.5">Monitor company-wide performance and employee directory.</p>
         </div>
         <div className="flex gap-2">
+          <button onClick={fetchData} disabled={loading} className="aq-btn-ghost !text-xs !py-1.5 !px-3">
+            <RefreshCw size={13} className={loading ? 'animate-spin' : ''} />
+          </button>
           <button onClick={() => exportReport('Attendance')} className="aq-btn-ghost !text-xs !py-1.5">
             <Download size={13} /> Export CSV
           </button>
@@ -66,10 +81,10 @@ const AdminReports: React.FC = () => {
       {/* KPI Stats */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         {[
-          { label: 'Total Staff',      value: String(employees.length), icon: Users,       color: 'oklch(0.72 0.19 167)',  sub: 'All registered' },
-          { label: 'Avg Attendance',   value: '94%',                    icon: Calendar,    color: 'oklch(0.75 0.16 240)',  sub: 'Today' },
-          { label: 'Tasks Completed',  value: '142',                    icon: Activity,    color: 'oklch(0.78 0.17 70)',   sub: 'This month' },
-          { label: 'Admin Roles',      value: String(adminCount + managerCount), icon: ShieldCheck, color: 'oklch(0.78 0.17 295)', sub: 'Admins & managers' },
+          { label: 'Total Staff',         value: String(employees.length),    icon: Users,       color: 'oklch(0.72 0.19 167)',  sub: 'All registered' },
+          { label: 'Active Employees',    value: String(activeCount),          icon: Calendar,    color: 'oklch(0.75 0.16 240)',  sub: 'Currently active' },
+          { label: 'Attendance Rate',     value: dashStats ? `${attendanceRate}%` : '—', icon: Activity, color: 'oklch(0.78 0.17 70)', sub: 'Today' },
+          { label: 'Open Tickets',        value: String(openTickets),          icon: ShieldCheck, color: 'oklch(0.78 0.17 295)', sub: 'Awaiting resolution' },
         ].map((s, i) => (
           <motion.div key={s.label} initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.07 }}
             className="aq-stat-card">
@@ -154,7 +169,7 @@ const AdminReports: React.FC = () => {
                     </span>
                   </td>
                   <td className="hidden md:table-cell text-[oklch(0.6_0.02_210)]">{emp.email}</td>
-                  <td><span className="aq-badge aq-badge-green">Active</span></td>
+                  <td><span className={`aq-badge ${emp.status === 'active' ? 'aq-badge-green' : emp.status === 'terminated' ? 'aq-badge-red' : emp.status === 'on_leave' ? 'aq-badge-amber' : 'aq-badge-blue'} capitalize`}>{emp.status ?? 'active'}</span></td>
                 </motion.tr>
               ))}
               {filtered.length === 0 && !loading && (

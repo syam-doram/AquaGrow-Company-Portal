@@ -50,8 +50,9 @@ const Profile: React.FC = () => {
     if (!employee) return;
     setLoading(true);
     try {
-      // Update via HRMS API
-      await hrmsApi.employees.update(employee.uid, { name, phone });
+      // employee._id is the MongoDB id used by HRMS JWT sessions
+      const empDbId = (employee as any)._id ?? (employee as any).id ?? employee.uid;
+      await hrmsApi.employees.update(empDbId, { name, phone });
       toast.success('Profile updated!');
       setEditing(false);
       await loadProfile();

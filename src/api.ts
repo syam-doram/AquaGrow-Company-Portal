@@ -117,6 +117,32 @@ export const hrmsApi = {
   },
 
   // ════════════════════════════════════════════════════════════════════════════
+  //  RECRUITMENT — JOBS
+  // ════════════════════════════════════════════════════════════════════════════
+  jobs: {
+    list:   (params?: { status?: string }) => {
+      const q = params ? '?' + new URLSearchParams(params as any).toString() : '';
+      return get<any[]>(`/jobs${q}`);
+    },
+    create: (data: any) => post<any>('/jobs', data),
+    update: (id: string, data: any) => put<any>(`/jobs/${id}`, data),
+    remove: (id: string) => del<any>(`/jobs/${id}`),
+  },
+
+  // ════════════════════════════════════════════════════════════════════════════
+  //  RECRUITMENT — CANDIDATES
+  // ════════════════════════════════════════════════════════════════════════════
+  candidates: {
+    list:   (params?: { jobId?: string; status?: string }) => {
+      const q = params ? '?' + new URLSearchParams(params as any).toString() : '';
+      return get<any[]>(`/candidates${q}`);
+    },
+    create: (data: any) => post<any>('/candidates', data),
+    update: (id: string, data: any) => put<any>(`/candidates/${id}`, data),
+    remove: (id: string) => del<any>(`/candidates/${id}`),
+  },
+
+  // ════════════════════════════════════════════════════════════════════════════
   //  TICKETS
   // ════════════════════════════════════════════════════════════════════════════
   tickets: {

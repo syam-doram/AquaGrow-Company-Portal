@@ -1,11 +1,11 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { useAuth, DEPARTMENTS, type EmployeeRole } from '../context/AuthContext';
 import {
   Briefcase, Plus, Search, X, Save, ChevronRight, Users, FileText,
   CheckCircle, XCircle, Clock, Send, UserPlus, Filter, Mail,
   Phone, MapPin, DollarSign, ArrowRight, Star, MoreHorizontal,
-  Layers, AlertCircle, CalendarDays, Building2,
+  Layers, AlertCircle, CalendarDays, Building2, RefreshCw,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { format } from 'date-fns';
@@ -14,6 +14,7 @@ import hrmsApi from '../api';
 // ── Types ──────────────────────────────────────────────────────────────────────
 interface Job {
   id: string;
+  _id?: string;
   role: string;
   department: string;
   skills: string;
@@ -29,6 +30,7 @@ type CandidateStatus = 'applied' | 'shortlisted' | 'interviewed' | 'selected' | 
 
 interface Candidate {
   id: string;
+  _id?: string;
   jobId: string;
   jobRole: string;
   name: string;
@@ -75,12 +77,15 @@ const EMPTY_CANDIDATE = {
 };
 
 // ══════════════════════════════════════════════════════════════════════════════
+const normalize = (r: any) => ({ ...r, id: r._id ?? r.id });
+
 const Recruitment: React.FC = () => {
   const { hasPermission } = useAuth();
   const canManage = hasPermission('manage_employees');
 
   const [jobs, setJobs]               = useState<Job[]>([]);
   const [candidates, setCandidates]   = useState<Candidate[]>([]);
+  const [fetching, setFetching]       = useState(true);
   const [activeTab, setActiveTab]     = useState<'pipeline' | 'jobs' | 'offers'>('pipeline');
 
   // Modals
@@ -97,11 +102,32 @@ const Recruitment: React.FC = () => {
   const [offerForm, setOfferForm] = useState({ offeredSalary: 0, joiningDate: '' });
   const [saving, setSaving]       = useState(false);
 
+  // ── Fetch from MongoDB ────────────────────────────────────────────────────────
+  const fetchAll = useCallback(async () => {
+    setFetching(true);
+    try {
+      const [jobsData, candsData] = await Promise.all([
+        hrmsApi.jobs.list(),
+        hrmsApi.candidates.list(),
+      ]);
+      setJobs(jobsData.map(normalize));
+      setCandidates(candsData.map(normalize));
+    } catch (err: any) {
+      toast.error(err.message ?? 'Failed to load recruitment data');
+    } finally {
+      setFetching(false);
+    }
+  }, []);
+
+  useEffect(() => { fetchAll(); }, [fetchAll]);
+
   // ── Derived ─────────────────────────────────────────────────────────────────
   const filteredCands = candidates.filter(c => {
     const matchJob    = selectedJob === 'all' || c.jobId === selectedJob;
-    const matchSearch = !search || c.name.toLowerCase().includes(search.toLowerCase()) ||
-      c.email.toLowerCase().includes(search.toLowerCase()) || c.jobRole.toLowerCase().includes(search.toLowerCase());
+    const matchSearch = !search ||
+      (c.name ?? '').toLowerCase().includes(search.toLowerCase()) ||
+      (c.email ?? '').toLowerCase().includes(search.toLowerCase()) ||
+      (c.jobRole ?? '').toLowerCase().includes(search.toLowerCase());
     return matchJob && matchSearch;
   });
 
@@ -109,54 +135,48 @@ const Recruitment: React.FC = () => {
   const saveJob = async (e: React.FormEvent) => {
     e.preventDefault(); setSaving(true);
     try {
-      const newJob: Job = {
-        ...jobForm,
-        id: `job_${Date.now()}`,
-        createdAt: new Date().toISOString(),
-      };
-      setJobs(prev => [newJob, ...prev]);
+      const created = await hrmsApi.jobs.create(jobForm);
+      setJobs(prev => [normalize(created), ...prev]);
       toast.success(`Job posted: ${jobForm.role}`);
       setShowJobModal(false); setJobForm(EMPTY_JOB);
-    } catch { toast.error('Failed to post job'); }
+    } catch (err: any) { toast.error(err.message ?? 'Failed to post job'); }
     finally { setSaving(false); }
   };
 
   const saveCandidate = async (e: React.FormEvent) => {
     e.preventDefault(); setSaving(true);
     try {
-      const job = jobs.find(j => j.id === candForm.jobId);
-      const newCand: Candidate = {
-        ...candForm,
-        id: `cand_${Date.now()}`,
-        jobRole: job?.role ?? candForm.jobRole,
-        status: 'applied',
-        createdAt: new Date().toISOString(),
-      };
-      setCandidates(prev => [newCand, ...prev]);
+      const created = await hrmsApi.candidates.create(candForm);
+      setCandidates(prev => [normalize(created), ...prev]);
       toast.success(`${candForm.name} added to pipeline!`);
       setShowCandModal(false); setCandForm(EMPTY_CANDIDATE);
-    } catch { toast.error('Failed to add candidate'); }
+    } catch (err: any) { toast.error(err.message ?? 'Failed to add candidate'); }
     finally { setSaving(false); }
   };
 
-  const moveStage = (cand: Candidate, newStatus: CandidateStatus) => {
-    setCandidates(prev => prev.map(c => c.id === cand.id ? { ...c, status: newStatus } : c));
-    if (selectedCand?.id === cand.id) setSelectedCand(prev => prev ? { ...prev, status: newStatus } : null);
-    toast.success(`${cand.name} → ${stageCfg(newStatus).label}`);
+  const moveStage = async (cand: Candidate, newStatus: CandidateStatus) => {
+    try {
+      await hrmsApi.candidates.update(cand.id, { status: newStatus });
+      setCandidates(prev => prev.map(c => c.id === cand.id ? { ...c, status: newStatus } : c));
+      if (selectedCand?.id === cand.id) setSelectedCand(prev => prev ? { ...prev, status: newStatus } : null);
+      toast.success(`${cand.name} → ${stageCfg(newStatus).label}`);
+    } catch (err: any) { toast.error(err.message ?? 'Failed to move stage'); }
   };
 
   const sendOffer = async (e: React.FormEvent) => {
     e.preventDefault(); if (!selectedCand) return; setSaving(true);
     try {
-      setCandidates(prev => prev.map(c => c.id === selectedCand.id ? {
-        ...c, status: 'offered',
+      const updates = {
+        status: 'offered' as CandidateStatus,
         offeredSalary: offerForm.offeredSalary,
         joiningDate: offerForm.joiningDate,
-        offerStatus: 'pending',
-      } : c));
+        offerStatus: 'pending' as const,
+      };
+      await hrmsApi.candidates.update(selectedCand.id, updates);
+      setCandidates(prev => prev.map(c => c.id === selectedCand.id ? { ...c, ...updates } : c));
       toast.success(`Offer sent to ${selectedCand.name}!`);
       setShowOfferModal(false); setSelectedCand(null);
-    } catch { toast.error('Failed to send offer'); }
+    } catch (err: any) { toast.error(err.message ?? 'Failed to send offer'); }
     finally { setSaving(false); }
   };
 
@@ -178,6 +198,8 @@ const Recruitment: React.FC = () => {
         status: 'active',
         empId: `AQ-${Date.now().toString().slice(-5)}`,
       });
+      // Mark candidate as converted in DB
+      await hrmsApi.candidates.update(cand.id, { status: 'selected', convertedToEmp: true });
       setCandidates(prev => prev.map(c => c.id === cand.id ? { ...c, status: 'selected' } : c));
       toast.success(`✅ ${cand.name} onboarded as Employee!`);
     } catch (err: any) {
@@ -185,16 +207,23 @@ const Recruitment: React.FC = () => {
     }
   };
 
-  const deleteJob = (id: string) => {
+  const deleteJob = async (id: string) => {
     if (!confirm('Delete this job posting?')) return;
-    setJobs(prev => prev.filter(j => j.id !== id));
-    toast.success('Job deleted');
+    try {
+      await hrmsApi.jobs.remove(id);
+      setJobs(prev => prev.filter(j => j.id !== id));
+      toast.success('Job deleted');
+    } catch (err: any) { toast.error(err.message ?? 'Failed to delete job'); }
   };
 
-  const updateOfferStatus = (candId: string, offerStatus: 'accepted' | 'declined') => {
-    setCandidates(prev => prev.map(c => c.id === candId
-      ? { ...c, offerStatus, ...(offerStatus === 'declined' ? { status: 'rejected' as CandidateStatus } : {}) }
-      : c));
+  const updateOfferStatus = async (candId: string, offerStatus: 'accepted' | 'declined') => {
+    try {
+      const extra = offerStatus === 'declined' ? { status: 'rejected' as CandidateStatus } : {};
+      await hrmsApi.candidates.update(candId, { offerStatus, ...extra });
+      setCandidates(prev => prev.map(c => c.id === candId
+        ? { ...c, offerStatus, ...extra }
+        : c));
+    } catch (err: any) { toast.error(err.message ?? 'Failed to update offer status'); }
   };
 
   // ── Render ───────────────────────────────────────────────────────────────────
@@ -212,6 +241,9 @@ const Recruitment: React.FC = () => {
         </div>
         {canManage && (
           <div className="flex gap-2">
+            <button onClick={fetchAll} disabled={fetching} className="aq-btn-ghost !text-xs !py-2 !px-3">
+              <RefreshCw size={13} className={fetching ? 'animate-spin' : ''} />
+            </button>
             <button onClick={() => { setCandForm(EMPTY_CANDIDATE); setShowCandModal(true); }}
               className="aq-btn-ghost !text-xs !py-2">
               <UserPlus size={14} /> Add Candidate
@@ -223,6 +255,15 @@ const Recruitment: React.FC = () => {
           </div>
         )}
       </div>
+
+      {/* Loading bar */}
+      {fetching && (
+        <div className="flex items-center gap-2 p-3 rounded-xl text-xs"
+          style={{ background: 'oklch(0.72 0.19 167 / 0.08)', border: '1px solid oklch(0.72 0.19 167 / 0.15)' }}>
+          <div className="w-3.5 h-3.5 border-2 border-[oklch(0.72_0.19_167/0.3)] border-t-[oklch(0.72_0.19_167)] rounded-full animate-spin" />
+          <span className="text-[oklch(0.72_0.19_167)] font-medium">Loading recruitment data from database…</span>
+        </div>
+      )}
 
       {/* KPI Stats */}
       <div className="grid grid-cols-2 lg:grid-cols-6 gap-3">
