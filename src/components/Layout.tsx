@@ -47,40 +47,45 @@ const ALL_NAV_GROUPS: { group: string; items: NavItem[] }[] = [
     ],
   },
   {
+    // ── Every authenticated role sees this section ──────────────────────────
     group: 'My Workspace',
     items: [
-      { id: 'attendance',   label: 'Timesheet',     sub: 'Log daily hours',         icon: Clock },
+      { id: 'attendance',   label: 'Timesheet',     sub: 'Log daily hours',         icon: Clock        },
       { id: 'leaves',       label: 'My Leaves',     sub: 'Apply & track requests',  icon: CalendarDays },
-      { id: 'payslips',     label: 'Payslips',      sub: 'Salary history',          icon: CreditCard },
-      { id: 'courses',      label: 'Courses',       sub: 'Learning & training',     icon: BookOpen },
-      { id: 'tickets',      label: 'My Tickets',    sub: 'Raise support issues',    icon: Ticket },
-      { id: 'profile',      label: 'Profile',       sub: 'Personal info & docs',    icon: UserCircle },
+      { id: 'payslips',     label: 'Payslips',      sub: 'Salary history',          icon: CreditCard   },
+      { id: 'courses',      label: 'Courses',       sub: 'Learning & training',     icon: BookOpen     },
+      { id: 'tickets',      label: 'My Tickets',    sub: 'Raise support issues',    icon: Ticket       },
+      { id: 'profile',      label: 'Profile',       sub: 'Personal info & docs',    icon: UserCircle   },
     ],
   },
   {
+    // ── HR / Admin tools (super_admin + hr_manager + operations for some) ──
     group: 'HR & Admin',
     items: [
-      { id: 'recruitment',  label: 'Recruitment',   sub: 'Hire & onboard talent',   icon: UserPlus,    roles: ['super_admin','hr_manager'], isNew: true },
-      { id: 'employees',    label: 'Employees',     sub: 'Team directory',          icon: Users,       roles: ['super_admin','hr_manager','operations_manager'] },
-      { id: 'leave-admin',  label: 'Leave Approvals', sub: 'Approve requests',     icon: CalendarDays,roles: ['super_admin','hr_manager','operations_manager'] },
-      { id: 'att-admin',    label: 'Timesheet Admin', sub: 'Full team records',   icon: Clock,       roles: ['super_admin','hr_manager','operations_manager'] },
-      { id: 'performance',  label: 'Performance',   sub: 'Reviews & ratings',      icon: TrendingUp,  roles: ['super_admin','hr_manager','operations_manager'] },
-      { id: 'documents',    label: 'Documents',     sub: 'Vault & verification',   icon: FileText,    roles: ['super_admin','hr_manager'] },
-      { id: 'assets',       label: 'Assets',        sub: 'Company equipment',      icon: Package,     roles: ['super_admin','hr_manager','operations_manager'] },
-      { id: 'ff-settlement',label: 'F&F Settlement',sub: 'Full & final process',   icon: ClipboardList,roles: ['super_admin','hr_manager'] },
+      { id: 'recruitment',   label: 'Recruitment',    sub: 'Hire & onboard talent',  icon: UserPlus,     roles: ['super_admin','hr_manager'], isNew: true },
+      { id: 'employees',     label: 'Employees',      sub: 'Team directory',         icon: Users,        roles: ['super_admin','hr_manager'] },
+      { id: 'leave-admin',   label: 'Leave Approvals',sub: 'Approve requests',       icon: CalendarDays, roles: ['super_admin','hr_manager','operations_manager'] },
+      { id: 'att-admin',     label: 'Timesheet Admin',sub: 'Full team records',      icon: Clock,        roles: ['super_admin','hr_manager','operations_manager'] },
+      { id: 'performance',   label: 'Performance',    sub: 'Reviews & ratings',      icon: TrendingUp,   roles: ['super_admin','hr_manager','operations_manager'] },
+      { id: 'documents',     label: 'Documents',      sub: 'Vault & verification',   icon: FileText,     roles: ['super_admin','hr_manager'] },
+      { id: 'assets',        label: 'Assets',         sub: 'Company equipment',      icon: Package,      roles: ['super_admin','hr_manager','operations_manager'] },
+      { id: 'ff-settlement', label: 'F&F Settlement', sub: 'Full & final process',   icon: ClipboardList,roles: ['super_admin','hr_manager'] },
     ],
   },
   {
+    // ── Finance tools ───────────────────────────────────────────────────────
     group: 'Finance & Payroll',
     items: [
-      { id: 'payroll',      label: 'Payroll',       sub: 'Run & manage salaries',  icon: Banknote,    roles: ['super_admin','hr_manager','finance_manager'] },
-      { id: 'reports',      label: 'Finance Reports', sub: 'P&L, analytics',       icon: BarChart3,   roles: ['super_admin','hr_manager','finance_manager'] },
+      { id: 'payroll',  label: 'Payroll',         sub: 'Run & manage salaries', icon: Banknote,  roles: ['super_admin','hr_manager','finance_manager'] },
+      { id: 'reports',  label: 'Finance Reports', sub: 'P&L, analytics',        icon: BarChart3, roles: ['super_admin','hr_manager','finance_manager'] },
     ],
   },
   {
+    // ── Ticket management (ops + support + hr/admin) ─────────────────────
     group: 'Support',
     items: [
-      { id: 'tickets-admin', label: 'All Tickets', sub: 'View & resolve team issues', icon: Ticket, roles: ['super_admin','hr_manager','operations_manager','support_agent'] },
+      { id: 'tickets-admin', label: 'All Tickets', sub: 'View & resolve team issues', icon: Ticket,
+        roles: ['super_admin','hr_manager','operations_manager','support_agent'] },
     ],
   },
   {

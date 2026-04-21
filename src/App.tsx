@@ -27,13 +27,15 @@ import { motion, AnimatePresence } from 'motion/react';
 import { Waves, Zap, Shield, Users, ChevronRight } from 'lucide-react';
 
 // ─── Demo Accounts ─────────────────────────────────────────────────────────────
+// All roles are treated as employees in the portal.
+// Only super_admin & hr_manager get additional HR/Admin sections.
 const DEMO_ACCOUNTS = [
-  { empId: 'AQ-SA001', role: 'Super Admin',        color: 'oklch(0.78 0.17 295)', password: 'Admin@123' },
-  { empId: 'AQ-HR001', role: 'HR Manager',          color: 'oklch(0.72 0.19 167)', password: 'HRMgr@123' },
-  { empId: 'AQ-FN001', role: 'Finance Manager',     color: 'oklch(0.75 0.16 240)', password: 'Fin@123' },
-  { empId: 'AQ-OP001', role: 'Operations Manager',  color: 'oklch(0.78 0.17 70)',  password: 'Ops@123' },
-  { empId: 'AQ-SP001', role: 'Support Agent',       color: 'oklch(0.75 0.18 25)',  password: 'Sup@123' },
-  { empId: 'AQ-EMP01', role: 'Employee',            color: 'oklch(0.6 0.02 210)',  password: 'Emp@123' },
+  { empId: 'AQ-SA001', role: 'Super Admin (Founder)',    color: 'oklch(0.78 0.17 295)', password: 'Admin@123' },
+  { empId: 'AQ-HR001', role: 'HR Manager',               color: 'oklch(0.72 0.19 167)', password: 'HRMgr@123' },
+  { empId: 'AQ-FN001', role: 'Finance Manager',          color: 'oklch(0.75 0.16 240)', password: 'Fin@123'    },
+  { empId: 'AQ-OP001', role: 'Operations Manager',       color: 'oklch(0.78 0.17 70)',  password: 'Ops@123'    },
+  { empId: 'AQ-SP001', role: 'Support Agent',            color: 'oklch(0.75 0.18 25)',  password: 'Sup@123'    },
+  { empId: 'AQ-EMP01', role: 'Employee',                 color: 'oklch(0.6 0.02 210)',  password: 'Emp@123'    },
 ];
 
 // ─── Login Screen ──────────────────────────────────────────────────────────────
@@ -233,34 +235,47 @@ const AppContent: React.FC = () => {
 
   const renderPage = () => {
     switch (activeTab) {
-      // ── Employee Self-Service ──────────────────────────────────────────
+      // ── Employee Self-Service — accessible to ALL authenticated roles ───
       case 'dashboard':   return <Dashboard />;
-      case 'attendance':  return <Attendance />;
-      case 'leaves':      return <Leaves />;
-      case 'payslips':    return <Payslips />;
+      case 'attendance':  return <Attendance />;      // Timesheet
+      case 'leaves':      return <Leaves />;          // My Leaves
+      case 'payslips':    return <Payslips />;         // Payslips
+      case 'courses':     return <Courses />;          // Learning
+      case 'profile':     return <Profile />;          // My Profile
+      case 'tickets':     return <TicketSystem admin={false} />; // My Tickets
 
-      case 'courses':     return <Courses />;
-      case 'profile':     return <Profile />;
-      case 'tickets':     return <TicketSystem admin={false} />;
+      // ── HR & Admin (super_admin + hr_manager only) ─────────────────────
+      case 'hr-dashboard':
+        return (hasRole('hr_manager') || hasRole('super_admin'))
+          ? <HRDashboard /> : <Dashboard />;
+      case 'recruitment':
+        return hasPermission('manage_employees') ? <Recruitment /> : <Dashboard />;
+      case 'employees':
+        return hasPermission('view_employees') ? <EmployeeOnboarding /> : <Dashboard />;
+      case 'leave-admin':
+        return hasPermission('approve_leaves') ? <LeaveApproval /> : <Leaves />;
+      case 'att-admin':
+        return hasPermission('manage_attendance') ? <Attendance /> : <Attendance />;
+      case 'performance':
+        return hasPermission('view_performance') ? <PerformanceReviews /> : <Dashboard />;
+      case 'ff-settlement':
+        return (hasRole('hr_manager') || hasRole('super_admin') || hasRole('finance_manager'))
+          ? <FullFinalSettlement /> : <Dashboard />;
 
-      // ── HR & Admin ────────────────────────────────────────────────────
-      case 'hr-dashboard':  return (hasRole('hr_manager') || hasRole('super_admin')) ? <HRDashboard /> : <Dashboard />;
-      case 'recruitment':   return hasPermission('manage_employees') ? <Recruitment /> : <Dashboard />;
-      case 'employees':     return hasPermission('view_employees') ? <EmployeeOnboarding /> : <Dashboard />;
-      case 'leave-admin':   return hasPermission('approve_leaves') ? <LeaveApproval /> : <Leaves />;
-      case 'performance':   return hasPermission('view_performance') ? <PerformanceReviews /> : <Dashboard />;
-      case 'att-admin':     return hasPermission('manage_attendance') ? <Attendance /> : <Attendance />;
+      // ── Finance & Payroll (finance_manager + hr + super_admin) ─────────
+      case 'payroll':
+        return hasPermission('view_payroll') ? <PayrollManagement /> : <Payslips />;
+      case 'reports':
+        return hasPermission('view_finance') ? <AdminReports /> : <Dashboard />;
 
-      // ── Finance & Payroll ─────────────────────────────────────────────
-      case 'payroll':       return hasPermission('view_payroll') ? <PayrollManagement /> : <Payslips />;
-      case 'reports':       return hasPermission('view_finance') ? <AdminReports /> : <Dashboard />;
-      case 'ff-settlement': return (hasRole('hr_manager') || hasRole('super_admin') || hasRole('finance_manager')) ? <FullFinalSettlement /> : <Dashboard />;
+      // ── Support ────────────────────────────────────────────────────────
+      case 'tickets-admin':
+        return hasPermission('manage_tickets')
+          ? <TicketSystem admin={true} /> : <TicketSystem admin={false} />;
 
-      // ── Support ───────────────────────────────────────────────────────
-      case 'tickets-admin': return hasPermission('manage_tickets') ? <TicketSystem admin={true} /> : <TicketSystem admin={false} />;
-
-      // ── System ────────────────────────────────────────────────────────
-      case 'roles':      return hasRole('super_admin') ? <AdminReports /> : <Dashboard />;
+      // ── System ─────────────────────────────────────────────────────────
+      case 'roles':
+        return hasRole('super_admin') ? <AdminReports /> : <Dashboard />;
 
       default: return <Dashboard />;
     }

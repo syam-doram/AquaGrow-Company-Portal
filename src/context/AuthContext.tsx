@@ -65,30 +65,46 @@ const ROLE_PERMISSIONS: Record<EmployeeRole, Permission[]> = {
     'view_reports',
     'view_ff','manage_ff',
   ],
-  finance_manager: [
-    'view_employees',
-    'view_payroll','run_payroll','approve_payroll',
+  operations_manager: [
+    // Employee self-service (same as all employees)
     'view_leaves',
     'view_tickets',
     'view_documents',
+    'view_courses',
+    'view_performance',
+    'view_attendance',
+    // Extra operational permissions
+    'view_employees',
+    'approve_leaves',
+    'manage_tickets','assign_tickets',
+    'manage_performance',
+    'view_assets','manage_assets',
+    'manage_attendance',
+    'view_reports',
+  ],
+  finance_manager: [
+    // Employee self-service
+    'view_leaves',
+    'view_tickets',
+    'view_documents',
+    'view_courses',
+    'view_performance',
+    'view_attendance',
+    // Finance-specific
+    'view_employees',
+    'view_payroll','run_payroll','approve_payroll',
     'view_finance','manage_finance',
     'view_reports',
     'view_ff',
   ],
-  operations_manager: [
-    'view_employees',
-    'view_leaves','approve_leaves',
-    'view_tickets','manage_tickets','assign_tickets',
+  support_agent: [
+    // Employee self-service
+    'view_leaves',
+    'view_tickets','manage_tickets',
     'view_documents',
     'view_courses',
-    'view_performance','manage_performance',
-    'view_assets','manage_assets',
-    'view_attendance','manage_attendance',
-    'view_reports',
-  ],
-  support_agent: [
-    'view_tickets','manage_tickets',
-    'view_courses',
+    'view_performance',
+    'view_attendance',
   ],
   employee: [
     'view_leaves',
