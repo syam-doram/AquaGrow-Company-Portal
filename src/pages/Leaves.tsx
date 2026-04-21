@@ -271,37 +271,25 @@ const Leaves: React.FC = () => {
 
       {/* ── KPI Strip ─────────────────────────────────────────────────────── */}
       <div className="grid grid-cols-2 lg:grid-cols-5 gap-3">
+
         {[
-          { label: 'Annual Quota',    value: `${ANNUAL_TOTAL}d`,         color: 'oklch(0.72 0.16 240)', sub: '18 days / year total',         icon: Shield    },
-          { label: 'Accrued So Far',  value: `${accruedTotal}d`,         color: 'oklch(0.72 0.19 167)', sub: `${accruedMonths} months × 1.5`, icon: TrendingUp },
-          { label: 'Used (Approved)', value: `${approvedDays}d`,         color: 'oklch(0.68 0.22 25)',  sub: 'Approved leaves taken',         icon: Calendar   },
-          { label: 'Available Now',   value: `${remaining.toFixed(1)}d`, color: remaining > 0 ? 'oklch(0.72 0.19 167)' : 'oklch(0.68 0.22 25)', sub: 'Accrued minus used', icon: Zap },
-          { label: 'Pending',         value: `${pending.length}`,        color: 'oklch(0.82 0.18 70)',  sub: 'Awaiting HR approval',          icon: Clock      },
-        ].map((s, i) => {
-          const Icon = s.icon;
-          return (
-            <motion.div key={s.label} initial={{ opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: i * 0.06 }} className="aq-stat-card !p-4 relative overflow-hidden"
-              style={{ background: `linear-gradient(135deg, ${s.color}10, ${s.color}04)`, border: `1px solid ${s.color}22` }}>
-              <div className="absolute -right-4 -top-4 w-14 h-14 rounded-full opacity-10"
-                style={{ background: `radial-gradient(circle, ${s.color}, transparent)` }} />
-              <div className="relative">
-                <div className="flex items-start justify-between mb-2">
-                  <p className="text-[8.5px] uppercase tracking-widest font-bold" style={{ color: `${s.color}99` }}>{s.label}</p>
-                  <div className="p-1.5 rounded-lg" style={{ background: `${s.color}15` }}>
-                    <Icon size={11} style={{ color: s.color }} />
-                  </div>
-                </div>
-                <p className="text-xl font-display font-black" style={{ color: s.color }}>{s.value}</p>
-                <p className="text-[9px] mt-0.5" style={{ color: 'var(--aq-text-muted)' }}>{s.sub}</p>
-              </div>
-            </motion.div>
-          );
-        })}
+          { label: 'Annual',   value: `${ANNUAL_TOTAL}d`, emoji: '📆', color: 'oklch(0.58 0.18 240)' },
+          { label: 'Accrued', value: `${accruedTotal}d`,  emoji: '🔒', color: 'oklch(0.55 0.19 167)' },
+          { label: 'Used',    value: `${approvedDays}d`,  emoji: '✅', color: 'oklch(0.58 0.22 25)'  },
+          { label: 'Balance', value: `${remaining.toFixed(1)}d`, emoji: remaining > 0 ? '✨' : '⚠️', color: remaining > 0 ? 'oklch(0.55 0.19 167)' : 'oklch(0.62 0.22 25)' },
+          { label: 'Pending', value: `${pending.length}`, emoji: '⏳', color: 'oklch(0.70 0.18 80)'  },
+        ].map((s, i) => (
+          <motion.div key={s.label} initial={{ opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: i * 0.06 }} className="aq-kpi-card">
+            <span className="aq-kpi-icon">{s.emoji}</span>
+            <span className="aq-kpi-number" style={{ color: s.color }}>{s.value}</span>
+            <span className="aq-kpi-label">{s.label}</span>
+          </motion.div>
+        ))}
       </div>
 
-      {/* ── Balance Bar panel ─────────────────────────────────────────────── */}
-      <div className="glass-panel p-5">
+      {/* ── Balance Bar panel ────────────────────────────────────────── */}
+      <div className="aq-card p-5">
         <div className="flex items-center justify-between mb-4">
           <div>
             <h3 className="text-sm font-display font-bold" style={{ color: 'var(--aq-text-primary)' }}>
@@ -311,8 +299,7 @@ const Leaves: React.FC = () => {
               Accrued: {accruedTotal}d · Used: {approvedDays}d · Remaining: {remaining.toFixed(1)}d
             </p>
           </div>
-          <span className="text-xs font-bold px-2.5 py-1 rounded-full"
-            style={{ background: 'oklch(0.72 0.19 167 / 0.1)', color: 'oklch(0.72 0.19 167)' }}>
+          <span className="aq-pill aq-pill-green">
             {accruedTotal > 0 ? Math.round((approvedDays / accruedTotal) * 100) : 0}% used
           </span>
         </div>
@@ -333,10 +320,8 @@ const Leaves: React.FC = () => {
         </div>
 
         {/* Per-type this month */}
-        <div className="flex flex-wrap gap-5 mt-4 pt-4" style={{ borderTop: '1px solid var(--aq-glass-border)' }}>
-          <p className="w-full text-[9px] uppercase tracking-widest font-bold" style={{ color: 'var(--aq-text-muted)' }}>
-            This Month's Usage
-          </p>
+        <div className="flex flex-wrap gap-5 mt-4 pt-4" style={{ borderTop: '1px solid var(--aq-card-border)' }}>
+          <p className="w-full aq-section-label">This Month's Usage</p>
           {LEAVE_POLICY.map(lt => {
             const used = currentMonthUsedByType[lt.type] ?? 0;
             const overQuota = used > lt.monthly;
@@ -375,7 +360,7 @@ const Leaves: React.FC = () => {
           TAB: MY LEAVES
       ══════════════════════════════════════════════════════════════════════ */}
       {activeTab === 'leaves' && (
-        <div className="glass-panel overflow-hidden">
+        <div className="aq-card overflow-hidden">
           <div className="px-5 py-4 flex items-center justify-between"
             style={{ borderBottom: '1px solid var(--aq-glass-border)', background: 'oklch(0.72 0.19 167 / 0.03)' }}>
             <div>

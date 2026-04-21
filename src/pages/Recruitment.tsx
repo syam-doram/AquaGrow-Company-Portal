@@ -314,24 +314,23 @@ const Recruitment: React.FC = () => {
         )}
       </AnimatePresence>
 
-      {/* ── KPI Strip ─────────────────────────────────────────────────────────── */}
+      {/* -- KPI Strip ---------------------------------- */}
       <div className="grid grid-cols-3 lg:grid-cols-6 gap-2.5">
-        {kpis.map((k, i) => {
-          const Icon = k.icon;
-          return (
-            <motion.div key={k.label} initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: i * 0.05 }} className="aq-stat-card !p-3 !gap-0">
-              <div className="flex items-center justify-between mb-2">
-                <p className="text-[8px] uppercase tracking-widest font-bold"
-                  style={{ color: 'oklch(0.45 0.02 210)' }}>{k.label}</p>
-                <div className="p-1.5 rounded-lg" style={{ background: `${k.color.replace(')', ' / 0.12)')}` }}>
-                  <Icon size={11} style={{ color: k.color }} />
-                </div>
-              </div>
-              <p className="text-2xl font-black" style={{ fontFamily: 'Space Grotesk, sans-serif', color: k.color }}>{k.value}</p>
-            </motion.div>
-          );
-        })}
+        {[
+          { label: 'Open Jobs',   value: jobs.filter(j => j.status === 'open').length,            emoji: '??', color: 'oklch(0.55 0.19 167)' },
+          { label: 'In Pipeline', value: candidates.filter(c => c.status !== 'rejected').length,   emoji: '?', color: 'oklch(0.58 0.18 240)' },
+          { label: 'Offers Sent', value: candidates.filter(c => c.status === 'offered').length,    emoji: '??', color: 'oklch(0.55 0.17 187)' },
+          { label: 'Hired',       value: candidates.filter(c => c.status === 'selected').length,   emoji: '??', color: 'oklch(0.70 0.18 80)'  },
+          { label: 'Interviewed', value: candidates.filter(c => c.status === 'interviewed').length, emoji: '??', color: 'oklch(0.60 0.20 295)' },
+          { label: 'Rejected',    value: candidates.filter(c => c.status === 'rejected').length,   emoji: '?', color: 'oklch(0.62 0.22 25)'  },
+        ].map((k, i) => (
+          <motion.div key={k.label} initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: i * 0.05 }} className="aq-kpi-card">
+            <span className="aq-kpi-icon">{k.emoji}</span>
+            <span className="aq-kpi-number" style={{ color: k.color }}>{k.value}</span>
+            <span className="aq-kpi-label">{k.label}</span>
+          </motion.div>
+        ))}
       </div>
 
       {/* ── Tabs ─────────────────────────────────────────────────────────────── */}
@@ -526,7 +525,7 @@ const Recruitment: React.FC = () => {
             const jobCands = candidates.filter(c => c.jobId === job.id);
             return (
               <motion.div key={job.id} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: i * 0.04 }} className="glass-panel p-4">
+                transition={{ delay: i * 0.04 }} className="aq-card p-4">
                 <div className="flex items-start justify-between gap-4">
                   <div className="flex-1 min-w-0">
                     {/* Title row */}

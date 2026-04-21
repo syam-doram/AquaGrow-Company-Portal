@@ -92,27 +92,17 @@ const STATUS_OPTS: { val: EntryStatus; label: string; color: string }[] = [
 
 // ── Sub-components ─────────────────────────────────────────────────────────────
 
-const StatCard = ({ label, value, icon, from, to, sub }: {
-  label: string; value: string; icon: React.ReactNode;
-  from: string; to: string; sub?: string;
+const StatCard = ({ label, value, emoji, color, sub }: {
+  label: string; value: string; emoji: string; color: string; sub?: string;
 }) => (
   <motion.div
     initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}
-    className="aq-stat-card relative overflow-hidden"
-    style={{ background: `linear-gradient(135deg, ${from}12, ${to}06)`, border: `1px solid ${from}28` }}
+    className="aq-kpi-card"
   >
-    <div className="absolute -right-4 -top-4 w-16 h-16 rounded-full opacity-10"
-      style={{ background: `radial-gradient(circle, ${from}, transparent)` }} />
-    <div className="relative">
-      <div className="flex items-center justify-between mb-3">
-        <p className="text-[9px] uppercase tracking-widest font-bold" style={{ color: `${from}aa` }}>{label}</p>
-        <div className="p-1.5 rounded-lg" style={{ background: `${from}18` }}>
-          <div style={{ color: from }}>{icon}</div>
-        </div>
-      </div>
-      <p className="text-2xl font-display font-bold" style={{ color: from }}>{value}</p>
-      {sub && <p className="text-[10px] mt-1" style={{ color: 'var(--aq-text-muted)' }}>{sub}</p>}
-    </div>
+    <span className="aq-kpi-icon">{emoji}</span>
+    <span className="aq-kpi-number" style={{ color }}>{value}</span>
+    <span className="aq-kpi-label">{label}</span>
+    {sub && <span style={{ fontSize: '0.55rem', color: 'var(--aq-text-muted)', marginTop: '-0.1rem' }}>{sub}</span>}
   </motion.div>
 );
 
@@ -234,17 +224,17 @@ const Attendance: React.FC = () => {
 
       {/* ── KPI row ─────────────────────────────────────────────────────────── */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-        <StatCard label="Hours Logged"  value={`${totalH.toFixed(1)}h`}       icon={<Clock size={13} />}        from="oklch(0.72 0.19 167)" to="oklch(0.6 0.16 187)" sub="This month" />
-        <StatCard label="Days Present"  value={`${presentCount}d`}             icon={<CalendarCheck size={13} />} from="oklch(0.82 0.18 70)"  to="oklch(0.72 0.18 55)" sub={`${completionPct}% attendance`} />
-        <StatCard label="Working Days"  value={`${workingDays.length}d`}        icon={<SunMedium size={13} />}    from="oklch(0.72 0.16 240)" to="oklch(0.65 0.18 270)" sub="Excl. holidays" />
-        <StatCard label="Holidays"      value={`${monthHols.length}`}           icon={<Star size={13} />}         from="oklch(0.78 0.17 55)"  to="oklch(0.75 0.18 25)" sub="This month" />
+        <StatCard label="Hours Logged"  value={`${totalH.toFixed(1)}h`}  emoji="⏱️" color="oklch(0.55 0.19 167)" sub="This month" />
+        <StatCard label="Days Present"  value={`${presentCount}d`}        emoji="✅" color="oklch(0.70 0.18 80)"  sub={`${completionPct}% attendance`} />
+        <StatCard label="Working Days"  value={`${workingDays.length}d`}  emoji="📅" color="oklch(0.58 0.18 240)" sub="Excl. holidays" />
+        <StatCard label="Holidays"      value={`${monthHols.length}`}     emoji="🎉" color="oklch(0.72 0.18 55)"  sub="This month" />
       </div>
 
       {/* ── Two-column: Calendar + Side Panel ───────────────────────────────── */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
 
         {/* ── Calendar (2/3 width) ──────────────────────────────────────────── */}
-        <div className="lg:col-span-2 glass-panel overflow-hidden">
+        <div className="lg:col-span-2 aq-card">
 
           {/* Month nav + month strip */}
           <div className="px-4 py-3 space-y-2.5" style={{ borderBottom: '1px solid var(--aq-glass-border)' }}>
@@ -365,12 +355,12 @@ const Attendance: React.FC = () => {
         <div className="space-y-4">
 
           {/* Holidays */}
-          <div className="glass-panel overflow-hidden">
+          <div className="aq-card aq-bg-amber">
             <div className="flex items-center gap-2.5 px-4 py-3"
-              style={{ borderBottom: '1px solid var(--aq-glass-border)', background: 'oklch(0.78 0.17 55 / 0.06)' }}>
-              <Gift size={14} style={{ color: 'oklch(0.78 0.17 55)' }} />
+              style={{ borderBottom: '1px solid var(--aq-card-border)' }}>
+              <div className="aq-avatar aq-avatar-sm aq-av-amber shrink-0"><Gift size={11} /></div>
               <div>
-                <p className="text-xs font-display font-black" style={{ color: 'oklch(0.78 0.17 55)' }}>Holidays</p>
+                <p className="text-xs font-display font-black" style={{ color: 'oklch(0.70 0.18 80)' }}>Holidays</p>
                 <p style={{ fontSize: '9px', color: 'var(--aq-text-muted)' }}>{MONTHS_SHORT[calMonth]} {calYear}</p>
               </div>
             </div>
@@ -408,7 +398,7 @@ const Attendance: React.FC = () => {
           </div>
 
           {/* Month summary mini card */}
-          <div className="glass-panel p-4 space-y-3">
+          <div className="aq-card aq-bg-green p-4 space-y-3">
             <div className="flex items-center justify-between">
               <p className="text-xs font-display font-black" style={{ color: 'var(--aq-text-secondary)' }}>This Month</p>
               <span className="text-[9px] font-bold px-2 py-0.5 rounded-full"
@@ -437,7 +427,7 @@ const Attendance: React.FC = () => {
           </div>
 
           {/* Quick stats */}
-          <div className="glass-panel p-4">
+          <div className="aq-card p-4">
             <p className="text-xs font-display font-black mb-3" style={{ color: 'var(--aq-text-secondary)' }}>Status Breakdown</p>
             <div className="space-y-2">
               {[
