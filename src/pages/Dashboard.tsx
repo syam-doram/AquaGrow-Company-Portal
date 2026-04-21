@@ -2,41 +2,50 @@ import React from 'react';
 import { motion } from 'motion/react';
 import {
   Waves, MapPin, Rocket, Leaf, Zap, Heart, Target,
-  CheckCircle, Globe2, Phone, Mail, Building2, Calendar,
-  Users, Award,
+  CheckCircle, Globe2, Building2, Calendar, Users, Award,
 } from 'lucide-react';
 
 // ── Core Values ────────────────────────────────────────────────────────────────
 const VALUES = [
-  { icon: Leaf,   color: 'oklch(0.72 0.19 167)', title: 'Sustainability', desc: 'Responsible aquaculture at the heart of every decision.' },
-  { icon: Target, color: 'oklch(0.78 0.17 295)', title: 'Precision',      desc: 'Data-driven insights for smarter harvests & operations.' },
-  { icon: Heart,  color: 'oklch(0.75 0.18 25)',  title: 'Farmer First',   desc: 'Empowering farmers with technology and fair market access.' },
-  { icon: Zap,    color: 'oklch(0.78 0.17 70)',  title: 'Innovation',     desc: 'Continuous R&D in IoT, AI prediction & supply chain.' },
+  { icon: Leaf,   bg: 'aq-bg-green',  color: 'oklch(0.55 0.19 167)', title: 'Sustainability', desc: 'Responsible aquaculture at the heart of every decision.' },
+  { icon: Target, bg: 'aq-bg-purple', color: 'oklch(0.60 0.20 295)', title: 'Precision',      desc: 'Data-driven insights for smarter harvests & operations.' },
+  { icon: Heart,  bg: 'aq-bg-red',    color: 'oklch(0.58 0.22 25)',  title: 'Farmer First',  desc: 'Empowering farmers with technology and fair market access.' },
+  { icon: Zap,    bg: 'aq-bg-amber',  color: 'oklch(0.70 0.18 80)',  title: 'Innovation',    desc: 'Continuous R&D in IoT, AI prediction & supply chain.' },
+];
+
+// ── Company KPIs ───────────────────────────────────────────────────────────────
+const KPIs = [
+  { icon: '🫧', label: 'Founded',      value: '2026',    color: 'oklch(0.72 0.19 167)' },
+  { icon: '👥', label: 'Team Members', value: '48',      color: 'oklch(0.62 0.18 240)' },
+  { icon: '🏆', label: 'Awards',       value: '3',       color: 'oklch(0.70 0.18 80)'  },
+  { icon: '🌊', label: 'Districts',    value: '12',      color: 'oklch(0.60 0.20 295)' },
+  { icon: '🐟', label: 'Farmers',      value: '850+',    color: 'oklch(0.58 0.22 25)'  },
+  { icon: '📦', label: 'Orders / mo',  value: '2.4K',    color: 'oklch(0.55 0.17 187)' },
 ];
 
 // ── Company Info ───────────────────────────────────────────────────────────────
 const COMPANY_INFO = [
-  { label: 'Company Name',   value: 'AquaGrow Technologies Pvt. Ltd.',  icon: Building2,  color: 'oklch(0.72 0.19 167)' },
-  { label: 'Founded',        value: '2026',                              icon: Calendar,   color: 'oklch(0.78 0.17 70)'  },
-  { label: 'Founder & CEO',  value: 'Syam Kumar Reddy',                  icon: Award,      color: 'oklch(0.78 0.17 295)' },
-  { label: 'Headquarters',  value: 'Nellore, Andhra Pradesh',            icon: MapPin,     color: 'oklch(0.75 0.18 25)'  },
-  { label: 'Industry',       value: 'AgriTech · AquaTech',              icon: Globe2,     color: 'oklch(0.72 0.19 167)' },
-  { label: 'Team Members',  value: '48 Employees',                       icon: Users,      color: 'oklch(0.78 0.17 70)'  },
+  { label: 'Company Name',  value: 'AquaGrow Technologies Pvt. Ltd.',  icon: Building2, av: 'aq-av-green',  bg: 'aq-bg-green'  },
+  { label: 'Founded',       value: '2026',                              icon: Calendar,  av: 'aq-av-amber',  bg: 'aq-bg-amber'  },
+  { label: 'Founder & CEO', value: 'Syam Kumar Reddy',                 icon: Award,     av: 'aq-av-purple', bg: 'aq-bg-purple' },
+  { label: 'Headquarters',  value: 'Nellore, Andhra Pradesh',           icon: MapPin,    av: 'aq-av-red',    bg: 'aq-bg-red'    },
+  { label: 'Industry',      value: 'AgriTech · AquaTech',              icon: Globe2,    av: 'aq-av-blue',   bg: 'aq-bg-blue'   },
+  { label: 'Team Members',  value: '48 Employees',                      icon: Users,     av: 'aq-av-teal',   bg: 'aq-bg-teal'   },
 ];
 
 // ══════════════════════════════════════════════════════════════════════════════
 const Dashboard: React.FC = () => {
   return (
-    <div className="space-y-6 max-w-5xl">
+    <div className="space-y-5 max-w-5xl pb-6">
 
-      {/* ── Hero Banner ──────────────────────────────────────────────────────── */}
+      {/* ── Hero Banner ───────────────────────────────────────────────────────── */}
       <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }}
         className="relative overflow-hidden rounded-2xl"
-        style={{ border: '1px solid oklch(0.72 0.19 167 / 0.15)' }}>
+        style={{ border: '1px solid oklch(0.72 0.19 167 / 0.18)' }}>
         <img src="/aq-hero.png" alt="AquaGrow Technologies"
-          className="w-full object-cover" style={{ height: '220px', objectPosition: 'center 40%' }} />
+          className="w-full object-cover" style={{ height: '210px', objectPosition: 'center 40%' }} />
         <div className="absolute inset-0 flex flex-col justify-center px-8"
-          style={{ background: 'linear-gradient(to right, oklch(0.08 0.015 200 / 92%) 0%, oklch(0.08 0.015 200 / 30%) 65%, transparent 100%)' }}>
+          style={{ background: 'linear-gradient(to right, oklch(0.08 0.015 200 / 92%) 0%, oklch(0.08 0.015 200 / 35%) 65%, transparent 100%)' }}>
           <div className="flex items-center gap-2 mb-2">
             <div className="w-8 h-8 rounded-xl flex items-center justify-center shadow-lg"
               style={{ background: 'linear-gradient(135deg, oklch(0.72 0.19 167), oklch(0.6 0.16 187))' }}>
@@ -49,23 +58,37 @@ const Dashboard: React.FC = () => {
             AquaGrow Technologies<br />
             <span style={{ color: 'oklch(0.72 0.19 167)' }}>Pvt. Ltd.</span>
           </h1>
-          <p className="text-xs text-white/55 max-w-xs mt-1">
+          <p className="text-xs text-white/50 max-w-xs mt-1">
             Smart Aquaculture · Sustainable Future · Nellore, Andhra Pradesh
           </p>
         </div>
       </motion.div>
 
-      {/* ── Founder + About ────────────────────────────────────────────────────── */}
+      {/* ── KPI Stat Row ──────────────────────────────────────────────────────── */}
+      <div className="grid grid-cols-3 sm:grid-cols-6 gap-3">
+        {KPIs.map((k, i) => (
+          <motion.div key={k.label}
+            initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: i * 0.05 }}
+            className="aq-kpi-card">
+            <span className="aq-kpi-icon">{k.icon}</span>
+            <span className="aq-kpi-number" style={{ color: k.color }}>{k.value}</span>
+            <span className="aq-kpi-label">{k.label}</span>
+          </motion.div>
+        ))}
+      </div>
+
+      {/* ── Founder + About ───────────────────────────────────────────────────── */}
       <div className="grid grid-cols-1 lg:grid-cols-5 gap-5">
 
         {/* Founder image */}
-        <motion.div initial={{ opacity: 0, x: -14 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.12 }}
+        <motion.div initial={{ opacity: 0, x: -14 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.15 }}
           className="lg:col-span-2 relative rounded-2xl overflow-hidden"
-          style={{ border: '1px solid oklch(0.72 0.19 167 / 0.15)', minHeight: '270px' }}>
+          style={{ border: '1px solid oklch(0.72 0.19 167 / 0.15)', minHeight: '260px' }}>
           <img src="/aq-founder.png" alt="Syam Kumar Reddy"
-            className="w-full h-full object-cover" style={{ minHeight: '270px' }} />
+            className="w-full h-full object-cover" style={{ minHeight: '260px' }} />
           <div className="absolute inset-0"
-            style={{ background: 'linear-gradient(to top, oklch(0.08 0.015 200 / 97%) 0%, oklch(0.08 0.015 200 / 35%) 55%, transparent 100%)' }}>
+            style={{ background: 'linear-gradient(to top, oklch(0.08 0.015 200 / 97%) 0%, oklch(0.08 0.015 200 / 30%) 55%, transparent 100%)' }}>
             <div className="absolute bottom-0 left-0 right-0 p-5">
               <span className="inline-flex items-center gap-1.5 text-[9px] font-black uppercase tracking-widest px-2.5 py-1 rounded-full mb-2.5"
                 style={{ background: 'oklch(0.72 0.19 167 / 0.2)', color: 'oklch(0.72 0.19 167)', border: '1px solid oklch(0.72 0.19 167 / 0.3)' }}>
@@ -83,9 +106,9 @@ const Dashboard: React.FC = () => {
           </div>
         </motion.div>
 
-        {/* About text */}
-        <motion.div initial={{ opacity: 0, x: 14 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.18 }}
-          className="lg:col-span-3 glass-panel p-6 flex flex-col gap-5 justify-between">
+        {/* About + Values */}
+        <motion.div initial={{ opacity: 0, x: 14 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.2 }}
+          className="lg:col-span-3 aq-card p-6 flex flex-col gap-5 justify-between">
           <div>
             <div className="flex items-center gap-2 mb-3">
               <MapPin size={12} style={{ color: 'oklch(0.78 0.17 70)' }} />
@@ -98,33 +121,30 @@ const Dashboard: React.FC = () => {
               Transforming Indian Aquaculture
             </h3>
             <p className="text-[12.5px] leading-relaxed" style={{ color: 'var(--aq-text-secondary)' }}>
-              <strong style={{ color: 'var(--aq-text-primary)' }}>AquaGrow Technologies Pvt. Ltd.</strong> was founded in 2026
-              by <strong style={{ color: 'var(--aq-text-primary)' }}>Syam Kumar Reddy</strong> in Nellore, Andhra Pradesh —
+              <strong style={{ color: 'var(--aq-text-primary)' }}>AquaGrow Technologies Pvt. Ltd.</strong> was founded in 2026 by{' '}
+              <strong style={{ color: 'var(--aq-text-primary)' }}>Syam Kumar Reddy</strong> in Nellore, Andhra Pradesh —
               with a bold vision to give every fish farmer in India access to the same precision tools that industry leaders use.
             </p>
             <p className="text-[12px] leading-relaxed mt-3" style={{ color: 'var(--aq-text-muted)' }}>
               We built IoT monitoring sensors, a real-time mobile platform, and a full supply-chain marketplace that connects
-              farmers directly with buyers — eliminating middlemen, increasing transparency, and maximising farmer income.
-              Our mission is to make aquaculture smarter, safer, and more profitable across India.
+              farmers directly with buyers — eliminating middlemen and maximising farmer income.
             </p>
           </div>
 
-          {/* Core values */}
+          {/* Core values — using new card tint classes */}
           <div className="grid grid-cols-2 gap-2.5">
             {VALUES.map(v => {
               const Icon = v.icon;
               return (
-                <div key={v.title} className="flex items-start gap-2.5 p-3 rounded-xl"
-                  style={{
-                    background: `color-mix(in oklch, ${v.color} 7%, var(--aq-glass-bg))`,
-                    border: `1px solid color-mix(in oklch, ${v.color} 15%, var(--aq-glass-border))`,
-                  }}>
-                  <div className="shrink-0 p-1.5 rounded-lg" style={{ background: `color-mix(in oklch, ${v.color} 18%, transparent)` }}>
-                    <Icon size={12} style={{ color: v.color }} />
+                <div key={v.title} className={`aq-card ${v.bg} flex items-start gap-2.5 p-3`}
+                  style={{ borderRadius: '0.875rem' }}>
+                  <div className="shrink-0 w-7 h-7 rounded-lg flex items-center justify-center"
+                    style={{ background: `color-mix(in oklch, ${v.color} 18%, transparent)` }}>
+                    <Icon size={13} style={{ color: v.color }} />
                   </div>
                   <div>
                     <p className="text-[11px] font-bold leading-none" style={{ color: 'var(--aq-text-primary)' }}>{v.title}</p>
-                    <p className="text-[9.5px] mt-0.5 leading-snug" style={{ color: 'var(--aq-text-muted)' }}>{v.desc}</p>
+                    <p className="text-[9.5px] mt-1 leading-snug" style={{ color: 'var(--aq-text-muted)' }}>{v.desc}</p>
                   </div>
                 </div>
               );
@@ -133,21 +153,18 @@ const Dashboard: React.FC = () => {
         </motion.div>
       </div>
 
-      {/* ── Company Details Info Grid ──────────────────────────────────────────── */}
+      {/* ── Company Details Grid ──────────────────────────────────────────────── */}
       <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.25 }}
-        className="glass-panel p-6">
+        className="aq-card p-6">
         <div className="flex items-center gap-3 mb-5">
-          <div className="w-8 h-8 rounded-xl flex items-center justify-center"
-            style={{ background: 'oklch(0.72 0.19 167 / 0.12)' }}>
-            <Building2 size={15} style={{ color: 'oklch(0.72 0.19 167)' }} />
+          <div className="aq-avatar aq-avatar-md aq-av-green">
+            <Building2 size={13} />
           </div>
           <div>
             <h3 className="text-sm font-black" style={{ fontFamily: 'Space Grotesk, sans-serif', color: 'var(--aq-text-primary)' }}>
               Company Details
             </h3>
-            <p className="text-[10px]" style={{ color: 'var(--aq-text-muted)' }}>
-              AquaGrow Technologies Pvt. Ltd.
-            </p>
+            <p className="text-[10px]" style={{ color: 'var(--aq-text-muted)' }}>AquaGrow Technologies Pvt. Ltd.</p>
           </div>
         </div>
 
@@ -158,20 +175,13 @@ const Dashboard: React.FC = () => {
               <motion.div key={row.label}
                 initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.3 + i * 0.05 }}
-                className="flex items-center gap-3 p-4 rounded-xl"
-                style={{
-                  background: `color-mix(in oklch, ${row.color} 6%, var(--aq-glass-bg))`,
-                  border: `1px solid color-mix(in oklch, ${row.color} 14%, var(--aq-glass-border))`,
-                }}>
-                <div className="shrink-0 p-2 rounded-xl"
-                  style={{ background: `color-mix(in oklch, ${row.color} 15%, transparent)` }}>
-                  <Icon size={15} style={{ color: row.color }} />
+                className={`aq-card ${row.bg} flex items-center gap-3 p-4`}>
+                <div className={`aq-avatar aq-avatar-md ${row.av} shrink-0`}>
+                  <Icon size={13} />
                 </div>
                 <div className="min-w-0">
-                  <p className="text-[9px] uppercase tracking-widest font-bold" style={{ color: 'var(--aq-text-faint)' }}>
-                    {row.label}
-                  </p>
-                  <p className="text-[13px] font-bold mt-0.5 leading-snug truncate" style={{ color: 'var(--aq-text-primary)' }}>
+                  <p className="aq-section-label">{row.label}</p>
+                  <p className="text-[13px] font-bold leading-snug truncate" style={{ color: 'var(--aq-text-primary)' }}>
                     {row.value}
                   </p>
                 </div>
@@ -181,11 +191,10 @@ const Dashboard: React.FC = () => {
         </div>
 
         {/* Mission strip */}
-        <div className="mt-4 p-4 rounded-xl flex items-start gap-3"
-          style={{ background: 'oklch(0.72 0.19 167 / 0.06)', border: '1px solid oklch(0.72 0.19 167 / 0.15)' }}>
-          <CheckCircle size={16} style={{ color: 'oklch(0.72 0.19 167)', flexShrink: 0, marginTop: 2 }} />
+        <div className="mt-4 aq-card aq-bg-green flex items-start gap-3 p-4">
+          <CheckCircle size={16} style={{ color: 'oklch(0.55 0.19 167)', flexShrink: 0, marginTop: 2 }} />
           <div>
-            <p className="text-[11px] font-black uppercase tracking-widest mb-1" style={{ color: 'oklch(0.72 0.19 167)' }}>
+            <p className="text-[11px] font-black uppercase tracking-widest mb-1" style={{ color: 'oklch(0.55 0.19 167)' }}>
               Our Mission
             </p>
             <p className="text-[12.5px] leading-relaxed" style={{ color: 'var(--aq-text-secondary)' }}>
