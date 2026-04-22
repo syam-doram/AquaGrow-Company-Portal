@@ -341,16 +341,16 @@ const Recruitment: React.FC = () => {
       {/* -- KPI Strip ---------------------------------- */}
       <div className="grid grid-cols-3 lg:grid-cols-6 gap-2.5">
         {[
-          { label: 'Open Jobs',   value: jobs.filter(j => j.status === 'open').length,            emoji: '??', color: 'oklch(0.55 0.19 167)' },
-          { label: 'In Pipeline', value: candidates.filter(c => c.status !== 'rejected').length,   emoji: '?', color: 'oklch(0.58 0.18 240)' },
-          { label: 'Offers Sent', value: candidates.filter(c => c.status === 'offered').length,    emoji: '??', color: 'oklch(0.55 0.17 187)' },
-          { label: 'Hired',       value: candidates.filter(c => c.status === 'selected').length,   emoji: '??', color: 'oklch(0.70 0.18 80)'  },
-          { label: 'Interviewed', value: candidates.filter(c => c.status === 'interviewed').length, emoji: '??', color: 'oklch(0.60 0.20 295)' },
-          { label: 'Rejected',    value: candidates.filter(c => c.status === 'rejected').length,   emoji: '?', color: 'oklch(0.62 0.22 25)'  },
+          { label: 'Open Jobs',   value: jobs.filter(j => j.status === 'open').length,             icon: Briefcase,  color: 'oklch(0.55 0.19 167)' },
+          { label: 'In Pipeline', value: candidates.filter(c => c.status !== 'rejected').length,   icon: TrendingUp, color: 'oklch(0.58 0.18 240)' },
+          { label: 'Offers Sent', value: candidates.filter(c => c.status === 'offered').length,    icon: Send,       color: 'oklch(0.55 0.17 187)' },
+          { label: 'Hired',       value: candidates.filter(c => c.status === 'selected').length,   icon: Award,      color: 'oklch(0.70 0.18 80)'  },
+          { label: 'Interviewed', value: candidates.filter(c => c.status === 'interviewed').length, icon: Users,      color: 'oklch(0.60 0.20 295)' },
+          { label: 'Rejected',    value: candidates.filter(c => c.status === 'rejected').length,   icon: XCircle,    color: 'oklch(0.62 0.22 25)'  },
         ].map((k, i) => (
           <motion.div key={k.label} initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }}
             transition={{ delay: i * 0.05 }} className="aq-kpi-card">
-            <span className="aq-kpi-icon">{k.emoji}</span>
+            <span className="aq-kpi-icon" style={{ color: k.color }}><k.icon size={22} strokeWidth={2} /></span>
             <span className="aq-kpi-number" style={{ color: k.color }}>{k.value}</span>
             <span className="aq-kpi-label">{k.label}</span>
           </motion.div>
