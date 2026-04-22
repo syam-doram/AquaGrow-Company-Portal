@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   Users, UserPlus, Target, MapPin, ClipboardList, Wallet,
@@ -14,6 +14,7 @@ import {
   XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend
 } from 'recharts';
 import { useAuth } from '../context/AuthContext';
+import { useHiring } from '../context/HiringContext';
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
@@ -299,6 +300,8 @@ const EmployeeModal = ({ emp, onClose, onSave }: {
   const [form, setForm] = useState<Omit<Employee, 'id' | 'avatar'>>(emp ? { ...emp } : { ...BLANK_EMP });
 
   const handleSave = () => {
+    // Hard guard — Founder record must never be mutated via this modal
+    if (emp?.role === 'ADMIN' || form.role === 'ADMIN') return;
     const id = emp?.id ?? `E${String(Date.now()).slice(-4)}`;
     const avatar = form.name.split(' ').map(w => w[0]).slice(0, 2).join('').toUpperCase();
     onSave({ ...form, id, avatar });
@@ -490,6 +493,7 @@ const TEAM_CONFIG = [
 
 const EmployeeManagement: React.FC = () => {
   const { hasRole } = useAuth();
+  const { hiredCandidates } = useHiring();
   const isFounder = hasRole('super_admin');
   const [activeTab, setActiveTab] = useState('teams');
   const [employees, setEmployees] = useState<Employee[]>(SEED_EMPLOYEES);
@@ -504,6 +508,61 @@ const EmployeeManagement: React.FC = () => {
   const [editEmp, setEditEmp] = useState<Employee | null>(null);
   const [searchQ, setSearchQ] = useState('');
   const [roleFilter, setRoleFilter] = useState<EmployeeRole | 'ALL'>('ALL');
+
+  // ─── Auto-add hired candidates from Hiring Pipeline ───────────────────────
+  // Role mapping: HiringPipeline appliedRole string → EmployeeManagement EmployeeRole key
+  const ROLE_MAP: Record<string, EmployeeRole> = {
+    'Backend Developer':    'BACKEND_DEV',
+    'Frontend Developer':   'FRONTEND_DEV',
+    'IoT Engineer':         'IOT_ENGINEER',
+    'IoT Specialist':       'IOT_SPECIALIST',
+    'QA Tester':            'QA_TESTER',
+    'Sales Executive':      'SALES_EXECUTIVE',
+    'Field Officer':        'FIELD_OFFICER',
+    'Field Technician':     'FIELD_TECHNICIAN',
+    'Operations Manager':   'OPS_MANAGER',
+    'Warehouse Manager':    'WAREHOUSE_MANAGER',
+    'Delivery Coordinator': 'DELIVERY_COORD',
+    'Support Executive':    'SUPPORT_EXEC',
+    'Aquaculture Expert':   'AQUA_EXPERT',
+    'Digital Marketing':    'DIGITAL_MARKETING',
+  };
+
+  useEffect(() => {
+    if (hiredCandidates.length === 0) return;
+    setEmployees(prev => {
+      let updated = [...prev];
+      let added = 0;
+      hiredCandidates.forEach(c => {
+        // Skip if already in the list (by candidateId stored as empId or by id)
+        const alreadyAdded = updated.some(
+          e => e.id === c.id || e.empId === (c.employeeId ?? c.id)
+        );
+        if (alreadyAdded) return;
+        const newEmp: Employee = {
+          id:          c.id,
+          name:        c.name,
+          email:       c.email,
+          phone:       c.phone ?? '',
+          empId:       c.employeeId ?? `AQ-HP-${c.id}`,
+          role:        ROLE_MAP[c.appliedRole] ?? 'SALES_EXECUTIVE',
+          area:        c.details?.city ?? 'HQ',
+          district:    c.details?.city ?? 'HQ',
+          joiningDate: c.hiredAt ?? new Date().toISOString().slice(0, 10),
+          status:      'ACTIVE',
+          avatar:      c.avatar,
+          salary:      c.details?.expectedCTC
+                         ? parseInt(c.details.expectedCTC.replace(/[^0-9]/g, '')) * 1000 / 12
+                         : 30000,
+          reportingTo: 'Admin',
+        };
+        updated = [...updated, newEmp];
+        added++;
+      });
+      return updated;
+    });
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [hiredCandidates]);
 
   const filteredEmployees = useMemo(() => employees.filter(e => {
     const matchSearch = e.name.toLowerCase().includes(searchQ.toLowerCase()) || e.area.toLowerCase().includes(searchQ.toLowerCase());
@@ -585,11 +644,18 @@ const EmployeeManagement: React.FC = () => {
                   {emp.avatar}
                 </div>
                 <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2 mb-0.5">
+                  <div className="flex items-center gap-2 mb-0.5 flex-wrap">
                     <p className="text-sm font-bold text-zinc-100">{emp.name}</p>
                     <span className={`text-[9px] font-bold px-2 py-0.5 rounded-full flex items-center gap-1 ${ROLE_META[emp.role].color}`}>
                       {ROLE_META[emp.role].icon} {ROLE_META[emp.role].label}
                     </span>
+                    {/* Badge for employees auto-added from Hiring Pipeline */}
+                    {hiredCandidates.some(c => c.id === emp.id) && (
+                      <span className="text-[8px] font-bold px-2 py-0.5 rounded-full flex items-center gap-1"
+                        style={{ background: 'oklch(0.55 0.19 167 / 0.15)', color: 'oklch(0.55 0.19 167)', border: '1px solid oklch(0.55 0.19 167 / 0.3)' }}>
+                        🏆 New Hire
+                      </span>
+                    )}
                   </div>
                   <p className="text-[10px] text-zinc-500">{emp.empId} · {emp.area} · {emp.district}</p>
                 </div>
@@ -1413,10 +1479,18 @@ const EmployeeManagement: React.FC = () => {
 
               {/* Action Buttons */}
               <div className="flex gap-3">
-                <button onClick={() => { setEditEmp(selectedEmp); setShowModal(true); setSelectedEmp(null); }}
-                  className="flex-1 py-2.5 rounded-xl bg-emerald-500/10 text-emerald-400 text-sm font-bold hover:bg-emerald-500/20 transition-colors flex items-center justify-center gap-2">
-                  <Edit2 size={14} /> Edit Profile
-                </button>
+                {/* Hide Edit button entirely for the Founder — their record is protected */}
+                {selectedEmp?.role !== 'ADMIN' && (
+                  <button onClick={() => { setEditEmp(selectedEmp); setShowModal(true); setSelectedEmp(null); }}
+                    className="flex-1 py-2.5 rounded-xl bg-emerald-500/10 text-emerald-400 text-sm font-bold hover:bg-emerald-500/20 transition-colors flex items-center justify-center gap-2">
+                    <Edit2 size={14} /> Edit Profile
+                  </button>
+                )}
+                {selectedEmp?.role === 'ADMIN' && (
+                  <div className="flex-1 py-2.5 rounded-xl bg-amber-500/5 border border-amber-500/20 text-amber-400/60 text-sm font-bold flex items-center justify-center gap-2 cursor-not-allowed select-none">
+                    <span>🔒</span> Founder — Protected
+                  </div>
+                )}
                 <button className="flex-1 py-2.5 rounded-xl bg-white/5 text-zinc-400 text-sm font-bold hover:bg-white/10 transition-colors flex items-center justify-center gap-2">
                   <Phone size={14} /> Call
                 </button>

@@ -1,10 +1,12 @@
 /**
- * HiringContext — Shared state between Recruitment and HiringPipeline.
+ * HiringContext — Shared state between Recruitment, HiringPipeline, and EmployeeManagement.
  *
  * Flow:
  *   Recruitment (offered + accepted) → "Move to Hiring Pipeline"
  *   → pushes a Candidate record into this context
  *   → HiringPipeline reads from this context (initialised with SEED data for demo)
+ *   → When candidate reaches 'hired', they are added to hiredCandidates
+ *   → EmployeeManagement reads hiredCandidates and auto-adds them to the employee list
  */
 import React, { createContext, useContext, useState, useCallback } from 'react';
 import type { Candidate, HiringStatus } from '../pages/HiringPipeline';
@@ -15,6 +17,7 @@ export type { Candidate, HiringStatus };
 // ── Context Shape ──────────────────────────────────────────────────────────────
 interface HiringContextValue {
   candidates: Candidate[];
+  hiredCandidates: Candidate[];           // candidates that completed 'hired' stage
   addCandidate: (c: Candidate) => void;
   updateCandidate: (id: string, status: HiringStatus, extras?: Partial<Candidate>) => void;
   hasCandidate: (id: string) => boolean;
@@ -29,9 +32,13 @@ export const HiringProvider: React.FC<{
 }> = ({ children, initialCandidates = [] }) => {
   const [candidates, setCandidates] = useState<Candidate[]>(initialCandidates);
 
+  // Pre-seed any candidates that were already 'hired' in the initial data
+  const [hiredCandidates, setHiredCandidates] = useState<Candidate[]>(
+    initialCandidates.filter(c => c.status === 'hired'),
+  );
+
   const addCandidate = useCallback((c: Candidate) => {
     setCandidates(prev => {
-      // Avoid duplicates
       if (prev.some(x => x.id === c.id)) return prev;
       return [c, ...prev];
     });
@@ -42,9 +49,19 @@ export const HiringProvider: React.FC<{
     status: HiringStatus,
     extras: Partial<Candidate> = {},
   ) => {
-    setCandidates(prev =>
-      prev.map(c => c.id === id ? { ...c, status, ...extras } : c),
-    );
+    setCandidates(prev => {
+      const updated = prev.map(c => c.id === id ? { ...c, status, ...extras } : c);
+
+      // Auto-push to hiredCandidates when pipeline completes
+      if (status === 'hired') {
+        const hired = updated.find(c => c.id === id);
+        if (hired) {
+          setHiredCandidates(h => h.some(x => x.id === id) ? h : [hired, ...h]);
+        }
+      }
+
+      return updated;
+    });
   }, []);
 
   const hasCandidate = useCallback(
@@ -53,7 +70,7 @@ export const HiringProvider: React.FC<{
   );
 
   return (
-    <HiringContext.Provider value={{ candidates, addCandidate, updateCandidate, hasCandidate }}>
+    <HiringContext.Provider value={{ candidates, hiredCandidates, addCandidate, updateCandidate, hasCandidate }}>
       {children}
     </HiringContext.Provider>
   );

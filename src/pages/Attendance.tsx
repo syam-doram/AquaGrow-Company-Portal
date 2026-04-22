@@ -4,7 +4,7 @@ import { motion, AnimatePresence } from 'motion/react';
 import {
   Clock, RefreshCw, ChevronLeft, ChevronRight,
   X, Save, AlertTriangle, CheckCircle, Gift,
-  Edit3, FileText, Hourglass, CalendarCheck,
+  Hourglass, CalendarCheck,
   SunMedium, Star, TrendingUp, Activity,
 } from 'lucide-react';
 import {
@@ -56,7 +56,6 @@ const isLeave   = (d: Date, lv: LeaveRecord[]) =>
 
 const MONTHS_FULL  = ['January','February','March','April','May','June','July','August','September','October','November','December'];
 const MONTHS_SHORT = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
-const WDAYS_S      = ['S','M','T','W','T','F','S'];
 const WDAYS_F      = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
 
 // ── Status config ─────────────────────────────────────────────────────────────
@@ -268,11 +267,14 @@ const Attendance: React.FC = () => {
           </div>
 
           {/* Weekday labels */}
-          <div className="grid grid-cols-7 px-3 pt-2.5 pb-1">
-            {WDAYS_S.map((d, i) => (
-              <div key={`${d}${i}`} className="text-center py-0.5"
-                style={{ fontSize: '9px', fontWeight: 900, letterSpacing: '0.08em',
-                  color: i === 0 || i === 6 ? 'oklch(0.68 0.22 25 / 0.8)' : 'var(--aq-text-muted)' }}>
+          <div className="grid grid-cols-7 px-3 pt-3 pb-2 gap-1">
+            {WDAYS_F.map((d, i) => (
+              <div key={`${d}${i}`} className="text-center py-1.5 rounded-lg"
+                style={{
+                  fontSize: '10px', fontWeight: 800, letterSpacing: '0.04em',
+                  color: i === 0 || i === 6 ? 'oklch(0.68 0.22 25 / 0.9)' : 'var(--aq-text-secondary)',
+                  background: i === 0 || i === 6 ? 'oklch(0.68 0.22 25 / 0.06)' : 'transparent',
+                }}>
                 {d}
               </div>
             ))}
@@ -280,12 +282,12 @@ const Attendance: React.FC = () => {
 
           {/* Day grid */}
           {fetching ? (
-            <div className="flex items-center justify-center py-10">
-              <div className="w-6 h-6 border-2 rounded-full animate-spin"
+            <div className="flex items-center justify-center py-12">
+              <div className="w-7 h-7 border-2 rounded-full animate-spin"
                 style={{ borderColor: 'var(--aq-glass-border)', borderTopColor: 'oklch(0.72 0.19 167)' }} />
             </div>
           ) : (
-            <div className="grid grid-cols-7 gap-1 px-3 pb-3">
+            <div className="grid grid-cols-7 gap-1.5 px-3 pb-4">
               {Array.from({ length: startOffset }).map((_, i) => <div key={`p${i}`} />)}
               {calDays.map(day => {
                 const key    = dk(day);
@@ -293,40 +295,85 @@ const Attendance: React.FC = () => {
                 const cs     = getCellStyle(day, rec, leaves);
                 const h      = rec?.workingHours;
                 const future = isAfter(day, new Date()) && !isSameDay(day, new Date());
+                const hPctBar = h != null ? Math.min(100, (h / MAX_WORK_HOURS) * 100) : 0;
+                const isHol  = isHoliday(day);
+                const isLv   = isLeave(day, leaves) && !isHol;
+                const isWknd = isWeekend(day);
 
                 return (
                   <motion.button key={key}
-                    whileHover={!future ? { scale: 1.08, y: -1 } : {}}
-                    whileTap={!future ? { scale: 0.93 } : {}}
+                    whileHover={!future && !isWknd ? { scale: 1.05, y: -2 } : {}}
+                    whileTap={!future && !isWknd ? { scale: 0.96 } : {}}
                     onClick={() => openDay(day)}
                     disabled={future}
                     title={cs.label || holName(day) || ''}
-                    className="relative flex flex-col items-center justify-center rounded-xl transition-all"
+                    className="relative flex flex-col items-center justify-between rounded-2xl overflow-hidden transition-all group"
                     style={{
-                      aspectRatio: '1', minHeight: '38px', maxHeight: '48px',
-                      background: cs.bg,
+                      height: '58px',
+                      background: cs.isToday
+                        ? `linear-gradient(160deg, ${cs.color}18, ${cs.color}08)`
+                        : isHol
+                        ? 'oklch(0.78 0.17 55 / 0.07)'
+                        : isLv
+                        ? 'oklch(0.68 0.16 295 / 0.07)'
+                        : isWknd
+                        ? 'oklch(1 0 0 / 0.02)'
+                        : rec
+                        ? `${cs.color}10`
+                        : 'var(--aq-card-bg)',
                       border: cs.isToday
-                        ? `2px solid ${cs.color}`
-                        : `1px solid ${cs.color}28`,
-                      opacity: future ? 0.2 : 1,
-                      cursor: future ? 'default' : 'pointer',
-                      boxShadow: cs.isToday ? `0 0 0 3px ${cs.color}15` : undefined,
+                        ? `2px solid ${cs.color}80`
+                        : `1px solid ${cs.color}22`,
+                      opacity: future ? 0.18 : 1,
+                      cursor: future || isWknd ? 'default' : 'pointer',
+                      boxShadow: cs.isToday
+                        ? `0 0 0 4px ${cs.color}18, 0 4px 16px ${cs.color}20`
+                        : rec && !cs.frozen
+                        ? `0 2px 8px ${cs.color}15`
+                        : 'none',
                     }}>
 
-                    <span style={{ fontSize: '11px', fontWeight: 800, color: cs.color, lineHeight: 1 }}>
-                      {format(day, 'd')}
-                    </span>
-
-                    {h != null && !cs.frozen && (
-                      <span style={{ fontSize: '7px', fontWeight: 700, color: cs.color, opacity: 0.75, lineHeight: 1, marginTop: '1px' }}>
-                        {h}h
+                    {/* Top: date number + icons */}
+                    <div className="flex flex-col items-center pt-2 gap-0.5">
+                      <span style={{
+                        fontSize: cs.isToday ? '15px' : '13px',
+                        fontWeight: 900,
+                        fontFamily: 'Space Grotesk, sans-serif',
+                        color: future || isWknd ? 'var(--aq-text-faint)' : cs.color,
+                        lineHeight: 1,
+                      }}>
+                        {format(day, 'd')}
                       </span>
-                    )}
-                    {isHoliday(day) && <span style={{ fontSize: '8px', lineHeight: 1, marginTop: '1px' }}>🎉</span>}
-                    {isLeave(day, leaves) && !isHoliday(day) && <span style={{ fontSize: '8px', lineHeight: 1, marginTop: '1px' }}>🏖</span>}
-                    {rec && !cs.frozen && (
-                      <div className="absolute top-0.5 right-0.5 w-1 h-1 rounded-full" style={{ background: cs.color }} />
-                    )}
+                      {isHol && <span style={{ fontSize: '10px', lineHeight: 1 }}>🎉</span>}
+                      {isLv  && <span style={{ fontSize: '10px', lineHeight: 1 }}>🏖</span>}
+                      {cs.isToday && !isHol && !isLv && (
+                        <span style={{
+                          fontSize: '6px', fontWeight: 900, letterSpacing: '0.06em',
+                          color: cs.color, textTransform: 'uppercase', lineHeight: 1,
+                        }}>TODAY</span>
+                      )}
+                      {h != null && !cs.frozen && !isHol && !isLv && (
+                        <span style={{ fontSize: '8px', fontWeight: 700, color: cs.color, opacity: 0.85, lineHeight: 1 }}>
+                          {h}h
+                        </span>
+                      )}
+                    </div>
+
+                    {/* Bottom: coloured status bar */}
+                    <div className="w-full" style={{ height: '4px', background: 'var(--aq-progress-track)' }}>
+                      {!cs.frozen && h != null && (
+                        <div style={{ height: '100%', width: `${hPctBar}%`, background: cs.color, borderRadius: '0 2px 2px 0', transition: 'width 0.5s ease' }} />
+                      )}
+                      {isHol && (
+                        <div style={{ height: '100%', width: '100%', background: 'oklch(0.78 0.17 55)', opacity: 0.6 }} />
+                      )}
+                      {isLv && (
+                        <div style={{ height: '100%', width: '100%', background: 'oklch(0.68 0.16 295)', opacity: 0.6 }} />
+                      )}
+                      {isWknd && !isHol && (
+                        <div style={{ height: '100%', width: '100%', background: 'oklch(0.68 0.22 25 / 0.3)' }} />
+                      )}
+                    </div>
                   </motion.button>
                 );
               })}
@@ -334,18 +381,19 @@ const Attendance: React.FC = () => {
           )}
 
           {/* Legend row */}
-          <div className="flex flex-wrap gap-x-4 gap-y-1.5 px-4 py-2.5" style={{ borderTop: '1px solid var(--aq-glass-border)' }}>
+          <div className="flex flex-wrap gap-x-3 gap-y-2 px-4 py-3" style={{ borderTop: '1px solid var(--aq-glass-border)' }}>
             {[
               { c: 'oklch(0.72 0.19 167)', l: 'Present'  },
               { c: 'oklch(0.82 0.18 70)',  l: 'Late'     },
+              { c: 'oklch(0.72 0.16 240)', l: 'Half Day' },
               { c: 'oklch(0.68 0.22 25)',  l: 'Absent'   },
               { c: 'oklch(0.68 0.16 295)', l: 'Leave'    },
               { c: 'oklch(0.78 0.17 55)',  l: 'Holiday'  },
-              { c: 'var(--aq-text-muted)', l: 'Weekend'  },
             ].map(x => (
-              <div key={x.l} className="flex items-center gap-1.5">
-                <div className="w-2 h-2 rounded-full" style={{ background: x.c }} />
-                <span style={{ fontSize: '9px', color: 'var(--aq-text-muted)' }}>{x.l}</span>
+              <div key={x.l} className="flex items-center gap-1.5 px-2 py-1 rounded-lg"
+                style={{ background: `${x.c}10`, border: `1px solid ${x.c}22` }}>
+                <div className="w-2 h-2 rounded-full shrink-0" style={{ background: x.c }} />
+                <span style={{ fontSize: '9px', fontWeight: 700, color: x.c }}>{x.l}</span>
               </div>
             ))}
           </div>
@@ -452,116 +500,7 @@ const Attendance: React.FC = () => {
         </div>
       </div>
 
-      {/* ── Timesheet log table ──────────────────────────────────────────────── */}
-      <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.15 }}
-        className="glass-panel overflow-hidden">
 
-        <div className="flex items-center justify-between px-5 py-4"
-          style={{ borderBottom: '1px solid var(--aq-glass-border)', background: 'oklch(0.72 0.19 167 / 0.04)' }}>
-          <div className="flex items-center gap-3">
-            <div className="p-2 rounded-xl" style={{ background: 'oklch(0.72 0.19 167 / 0.1)' }}>
-              <FileText size={14} style={{ color: 'oklch(0.72 0.19 167)' }} />
-            </div>
-            <div>
-              <p className="text-sm font-display font-black" style={{ color: 'var(--aq-text-primary)' }}>Timesheet Log</p>
-              <p style={{ fontSize: '9px', color: 'var(--aq-text-muted)' }}>Working days · {MONTHS_FULL[calMonth]} {calYear}</p>
-            </div>
-          </div>
-          <div className="text-right">
-            <p style={{ fontSize: '8px', fontWeight: 900, color: 'var(--aq-text-muted)', textTransform: 'uppercase', letterSpacing: '0.08em' }}>Total</p>
-            <p className="font-display" style={{ fontSize: '18px', fontWeight: 900, color: 'oklch(0.72 0.19 167)' }}>{totalH.toFixed(1)}h</p>
-          </div>
-        </div>
-
-        <div className="overflow-x-auto">
-          <table className="w-full" style={{ borderCollapse: 'collapse' }}>
-            <thead>
-              <tr style={{ borderBottom: '1px solid var(--aq-table-th-border)', background: 'var(--aq-table-th-bg)' }}>
-                {['Date', 'Day', 'Hours', 'Status', 'Notes', ''].map(h => (
-                  <th key={h} className="px-4 py-2.5 text-left"
-                    style={{ fontSize: '9px', fontWeight: 900, color: 'var(--aq-table-th-color)', textTransform: 'uppercase', letterSpacing: '0.07em' }}>
-                    {h}
-                  </th>
-                ))}
-              </tr>
-            </thead>
-            <tbody>
-              {calDays.filter(d => !isWeekend(d)).map((day, ri) => {
-                const key     = dk(day);
-                const rec     = recordMap[key];
-                const cs      = getCellStyle(day, rec, leaves);
-                const isToday = isSameDay(day, new Date());
-                const future  = isAfter(day, new Date()) && !isToday;
-                const hol     = isHoliday(day);
-                const onLv    = isLeave(day, leaves);
-                const h       = rec?.workingHours ?? 0;
-                const hPctRow = Math.min(100, (h / MAX_WORK_HOURS) * 100);
-
-                return (
-                  <motion.tr key={key}
-                    initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: ri * 0.012 }}
-                    onClick={() => !future && !hol && !onLv && openDay(day)}
-                    className="group transition-colors"
-                    style={{
-                      borderBottom: '1px solid var(--aq-table-td-border)',
-                      background: isToday ? 'oklch(0.72 0.19 167 / 0.05)' : 'transparent',
-                      opacity: future ? 0.28 : 1,
-                      cursor: (future || hol || onLv) ? 'default' : 'pointer',
-                    }}>
-                    <td className="px-4 py-3">
-                      <div className="flex items-center gap-1.5">
-                        {isToday && <div className="w-1.5 h-1.5 rounded-full shrink-0" style={{ background: 'oklch(0.72 0.19 167)' }} />}
-                        <span style={{ fontSize: '11px', fontWeight: 700, color: 'var(--aq-text-primary)', fontFamily: 'monospace' }}>
-                          {format(day, 'dd MMM')}
-                        </span>
-                      </div>
-                    </td>
-                    <td className="px-4 py-3">
-                      <span style={{ fontSize: '10px', color: 'var(--aq-text-muted)' }}>{WDAYS_F[day.getDay()]}</span>
-                    </td>
-                    <td className="px-4 py-3 min-w-[80px]">
-                      {hol || onLv ? (
-                        <span style={{ fontSize: '10px', color: 'var(--aq-text-faint)' }}>—</span>
-                      ) : rec?.workingHours != null ? (
-                        <div>
-                          <div className="flex items-center gap-1.5">
-                            <span className="font-display" style={{ fontSize: '12px', fontWeight: 900, color: cs.color }}>{h}h</span>
-                            {h >= MAX_WORK_HOURS && (
-                              <span className="text-[7px] font-bold px-1.5 py-0.5 rounded-md"
-                                style={{ background: 'oklch(0.82 0.18 70 / 0.15)', color: 'oklch(0.82 0.18 70)' }}>MAX</span>
-                            )}
-                          </div>
-                          <div className="mt-0.5 w-14 h-1 rounded-full overflow-hidden" style={{ background: 'var(--aq-progress-track)' }}>
-                            <div className="h-full rounded-full" style={{ width: `${hPctRow}%`, background: cs.color }} />
-                          </div>
-                        </div>
-                      ) : (
-                        <span style={{ fontSize: '10px', color: 'var(--aq-text-faint)' }}>—</span>
-                      )}
-                    </td>
-                    <td className="px-4 py-3">
-                      <span className="inline-flex items-center px-2 py-0.5 rounded-full"
-                        style={{ fontSize: '9px', fontWeight: 800, background: `${cs.color}15`, color: cs.color, border: `1px solid ${cs.color}28` }}>
-                        {hol ? 'Holiday' : onLv ? 'Leave' : isToday && !rec ? 'Today' : future ? '—' : (cs.label || (rec ? rec.status : 'Absent'))}
-                      </span>
-                    </td>
-                    <td className="px-4 py-3 max-w-[140px]">
-                      <span style={{ fontSize: '9px', color: 'var(--aq-text-muted)' }} className="truncate block">
-                        {hol ? holName(day) : rec?.notes || '—'}
-                      </span>
-                    </td>
-                    <td className="px-4 py-3">
-                      {!future && !hol && !onLv && (
-                        <Edit3 size={11} className="opacity-0 group-hover:opacity-50 transition-opacity" style={{ color: 'var(--aq-text-muted)' }} />
-                      )}
-                    </td>
-                  </motion.tr>
-                );
-              })}
-            </tbody>
-          </table>
-        </div>
-      </motion.div>
 
       {/* ══════════════════════════════════════════════════════════════════════
           ENTRY MODAL
