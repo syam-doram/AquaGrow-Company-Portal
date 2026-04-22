@@ -22,10 +22,10 @@ const ROLE_CONFIG: {
 }[] = [
   {
     value: 'super_admin',
-    label: 'Super Admin',
+    label: 'Founder',
     color: 'oklch(0.78 0.17 295)',
     badge: 'aq-badge-purple',
-    desc: 'Full system access — Founder / CEO level',
+    desc: 'Founder & CEO — full control',
     access: ['Everything including role management & system settings'],
   },
   {
@@ -284,7 +284,7 @@ const RoleAccessGuide: React.FC = () => {
 
 // ══════════════════════════════════════════════════════════════════════════════
 const EmployeeOnboarding: React.FC = () => {
-  const { hasPermission } = useAuth();
+  const { hasPermission, hasRole } = useAuth();
   const [employees, setEmployees]       = useState<Employee[]>([]);
   const [search, setSearch]             = useState('');
   const [filterDept, setFilterDept]     = useState('All');
@@ -298,6 +298,7 @@ const EmployeeOnboarding: React.FC = () => {
   const [fetching, setFetching]         = useState(true);
   const [credentials, setCredentials]   = useState<{ name: string; empId: string; password: string; role: EmployeeRole } | null>(null);
   const canManage = hasPermission('manage_employees');
+  const isFounder = hasRole('super_admin');
 
   const roleCfg = (role: EmployeeRole) => ROLE_CONFIG.find(r => r.value === role) ?? ROLE_CONFIG[5];
 
@@ -464,7 +465,7 @@ const EmployeeOnboarding: React.FC = () => {
         </select>
         <select value={filterRole} onChange={e => setFilterRole(e.target.value)} className="aq-input !py-1.5 !text-xs !w-auto">
           <option value="All">All Roles</option>
-          {ROLE_CONFIG.map(r => <option key={r.value} value={r.value}>{r.label}</option>)}
+          {ROLE_CONFIG.filter(r => r.value !== 'super_admin').map(r => <option key={r.value} value={r.value}>{r.label}</option>)}
         </select>
       </div>
 
@@ -529,7 +530,9 @@ const EmployeeOnboarding: React.FC = () => {
                       <td className="hidden md:table-cell" style={{ fontSize: '10px', color: 'var(--aq-text-secondary)' }}>{emp.department ?? '—'}</td>
                       <td className="hidden lg:table-cell" style={{ fontSize: '10px', color: 'var(--aq-text-secondary)' }}>{emp.designation ?? '—'}</td>
                       <td className="hidden lg:table-cell" style={{ fontSize: '11px', fontFamily: 'monospace', fontWeight: 700, color: 'var(--aq-text-primary)' }}>
-                        {emp.salary ? `₹${Number(emp.salary).toLocaleString()}` : '—'}
+                        {emp.role === 'super_admin'
+                          ? (isFounder ? `₹${Number(emp.salary).toLocaleString()}` : '—')
+                          : (emp.salary ? `₹${Number(emp.salary).toLocaleString()}` : '—')}
                       </td>
                       <td className="hidden lg:table-cell" style={{ fontSize: '10px', color: 'var(--aq-text-muted)' }}>
                         {emp.joiningDate ? format(new Date(emp.joiningDate), 'MMM dd, yyyy') : '—'}
@@ -539,7 +542,7 @@ const EmployeeOnboarding: React.FC = () => {
                           {(emp.status ?? 'active').replace('_', ' ')}
                         </span>
                       </td>
-                      {canManage && (
+                      {canManage && emp.role !== 'super_admin' && (
                         <td className="text-right">
                           <div className="flex items-center gap-1 justify-end">
                             <button onClick={() => openEdit(emp)}
@@ -555,6 +558,11 @@ const EmployeeOnboarding: React.FC = () => {
                               <Trash2 size={13} />
                             </button>
                           </div>
+                        </td>
+                      )}
+                      {canManage && emp.role === 'super_admin' && (
+                        <td className="text-right">
+                          <span style={{ fontSize: '9px', color: 'var(--aq-text-faint)' }}>🔒 Protected</span>
                         </td>
                       )}
                     </motion.tr>

@@ -13,6 +13,7 @@ import {
   BarChart, Bar, LineChart, Line, RadialBarChart, RadialBar,
   XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend
 } from 'recharts';
+import { useAuth } from '../context/AuthContext';
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
@@ -242,8 +243,8 @@ const ROLE_META: Record<EmployeeRole, { label: string; color: string; icon: Reac
   // Support
   SUPPORT_EXEC:     { label: 'Support Executive',  color: 'text-green-400 bg-green-500/10',  icon: <Phone size={10} />,       team: 'Customer Support' },
   AQUA_EXPERT:      { label: 'Aquaculture Expert',  color: 'text-emerald-300 bg-emerald-300/10', icon: <Star size={10} />,     team: 'Customer Support' },
-  // Admin
-  ADMIN:            { label: 'Admin',               color: 'text-red-400 bg-red-500/10',      icon: <Shield size={10} />,      team: 'Operations' },
+  // Founder (protected — never editable via UI)
+  ADMIN:            { label: 'Founder',             color: 'text-amber-300 bg-amber-400/10',  icon: <Star size={10} />,        team: 'Management' },
 };
 
 const STATUS_META: Record<EmpStatus, { label: string; dot: string }> = {
@@ -488,6 +489,8 @@ const TEAM_CONFIG = [
 ] as const;
 
 const EmployeeManagement: React.FC = () => {
+  const { hasRole } = useAuth();
+  const isFounder = hasRole('super_admin');
   const [activeTab, setActiveTab] = useState('teams');
   const [employees, setEmployees] = useState<Employee[]>(SEED_EMPLOYEES);
   const [targets] = useState<Target[]>(SEED_TARGETS);
@@ -615,8 +618,17 @@ const EmployeeManagement: React.FC = () => {
                     <span className={`w-1.5 h-1.5 rounded-full ${STATUS_META[emp.status].dot}`} />
                     {STATUS_META[emp.status].label}
                   </span>
-                  <button className="p-1.5 rounded-lg hover:bg-white/10 text-zinc-500 hover:text-zinc-200 transition-colors opacity-0 group-hover:opacity-100"
-                    onClick={e => { e.stopPropagation(); setEditEmp(emp); setShowModal(true); }}>
+                  <button
+                    className="p-1.5 rounded-lg hover:bg-white/10 text-zinc-500 hover:text-zinc-200 transition-colors opacity-0 group-hover:opacity-100"
+                    disabled={emp.role === 'ADMIN'}
+                    title={emp.role === 'ADMIN' ? '🔒 Founder record is protected' : 'Edit'}
+                    onClick={e => {
+                      e.stopPropagation();
+                      if (emp.role === 'ADMIN') return;
+                      setEditEmp(emp);
+                      setShowModal(true);
+                    }}
+                    style={{ opacity: emp.role === 'ADMIN' ? 0 : undefined, pointerEvents: emp.role === 'ADMIN' ? 'none' : undefined }}>
                     <Edit2 size={14} />
                   </button>
                   <ChevronRight size={14} className="text-zinc-600 group-hover:text-zinc-400 transition-colors" />

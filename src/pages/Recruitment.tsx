@@ -1,6 +1,8 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { useAuth, DEPARTMENTS, type EmployeeRole } from '../context/AuthContext';
+import { useHiring } from '../context/HiringContext';
+import type { Candidate as HiringCandidate } from './HiringPipeline';
 import {
   Briefcase, Plus, Search, X, Save, Users, FileText,
   CheckCircle, XCircle, Send, UserPlus, Mail,
@@ -103,6 +105,7 @@ const Avatar: React.FC<{ name: string; size?: number }> = ({ name, size = 9 }) =
 const Recruitment: React.FC = () => {
   const { hasPermission } = useAuth();
   const canManage = hasPermission('manage_employees');
+  const { addCandidate: addToHiring, hasCandidate: inHiring } = useHiring();
 
   const [jobs, setJobs]               = useState<Job[]>([]);
   const [candidates, setCandidates]   = useState<Candidate[]>([]);
@@ -255,6 +258,27 @@ const Recruitment: React.FC = () => {
       const extra = offerStatus === 'declined' ? { status: 'rejected' as CandidateStatus } : {};
       await hrmsApi.candidates.update(candId, { offerStatus, ...extra });
       setCandidates(prev => prev.map(c => c.id === candId ? { ...c, offerStatus, ...extra } : c));
+
+      // Auto-push to Hiring Pipeline when offer is accepted
+      if (offerStatus === 'accepted') {
+        const cand = candidates.find(c => c.id === candId);
+        if (cand && !inHiring(candId)) {
+          const job = jobs.find(j => j.id === cand.jobId);
+          const hiringCand: HiringCandidate = {
+            id:          cand.id,
+            avatar:      cand.name.split(' ').map((w: string) => w[0]).slice(0, 2).join('').toUpperCase(),
+            name:        cand.name,
+            email:       cand.email,
+            phone:       cand.phone ?? '',
+            appliedRole: cand.jobRole,
+            department:  job?.department ?? '',
+            status:      'invited',
+            invitedAt:   new Date().toISOString().slice(0, 10),
+          };
+          addToHiring(hiringCand);
+          toast.success(`🚀 ${cand.name} added to Hiring Pipeline!`);
+        }
+      }
     } catch (err: any) { toast.error(err.message ?? 'Failed to update offer'); }
   };
 
@@ -635,9 +659,33 @@ const Recruitment: React.FC = () => {
               </div>
 
               {canManage && cand.offerStatus === 'accepted' && (
-                <button onClick={() => convertToEmployee(cand)} className="aq-btn-primary !text-xs !py-1.5 shrink-0">
-                  <UserPlus size={12} /> Onboard
-                </button>
+                <div className="flex flex-col gap-1.5 shrink-0">
+                  {inHiring(cand.id) ? (
+                    <span className="px-2.5 py-1.5 rounded-lg text-[9px] font-bold"
+                      style={{ background: 'oklch(0.55 0.19 167 / 0.12)', color: 'oklch(0.55 0.19 167)', border: '1px solid oklch(0.55 0.19 167 / 0.25)' }}>
+                      ✓ In Hiring Pipeline
+                    </span>
+                  ) : (
+                    <button onClick={() => {
+                      const job = jobs.find(j => j.id === cand.jobId);
+                      const hiringCand: HiringCandidate = {
+                        id:          cand.id,
+                        avatar:      cand.name.split(' ').map((w: string) => w[0]).slice(0, 2).join('').toUpperCase(),
+                        name:        cand.name,
+                        email:       cand.email,
+                        phone:       cand.phone ?? '',
+                        appliedRole: cand.jobRole,
+                        department:  job?.department ?? '',
+                        status:      'invited',
+                        invitedAt:   new Date().toISOString().slice(0, 10),
+                      };
+                      addToHiring(hiringCand);
+                      toast.success(`🚀 ${cand.name} added to Hiring Pipeline!`);
+                    }} className="aq-btn-primary !text-xs !py-1.5 shrink-0">
+                      🚀 Send to Hiring
+                    </button>
+                  )}
+                </div>
               )}
               {canManage && (!cand.offerStatus || cand.offerStatus === 'pending') && (
                 <div className="flex gap-2 shrink-0">
@@ -789,10 +837,31 @@ const Recruitment: React.FC = () => {
                       </button>
                     )}
                     {selectedCand.status === 'offered' && selectedCand.offerStatus === 'accepted' && (
-                      <button onClick={() => convertToEmployee(selectedCand)}
-                        className="aq-btn-primary w-full justify-center !text-xs">
-                        <UserPlus size={13} /> Convert to Employee
-                      </button>
+                      inHiring(selectedCand.id) ? (
+                        <div className="w-full flex items-center justify-center gap-2 py-2.5 px-4 rounded-xl text-xs font-bold"
+                          style={{ background: 'oklch(0.55 0.19 167 / 0.1)', color: 'oklch(0.55 0.19 167)', border: '1px solid oklch(0.55 0.19 167 / 0.25)' }}>
+                          ✅ In Hiring Pipeline — continue there
+                        </div>
+                      ) : (
+                        <button onClick={() => {
+                          const job = jobs.find(j => j.id === selectedCand.jobId);
+                          const hiringCand: HiringCandidate = {
+                            id:          selectedCand.id,
+                            avatar:      selectedCand.name.split(' ').map((w: string) => w[0]).slice(0, 2).join('').toUpperCase(),
+                            name:        selectedCand.name,
+                            email:       selectedCand.email,
+                            phone:       selectedCand.phone ?? '',
+                            appliedRole: selectedCand.jobRole,
+                            department:  job?.department ?? '',
+                            status:      'invited',
+                            invitedAt:   new Date().toISOString().slice(0, 10),
+                          };
+                          addToHiring(hiringCand);
+                          toast.success(`🚀 ${selectedCand.name} sent to Hiring Pipeline!`);
+                        }} className="aq-btn-primary w-full justify-center !text-xs">
+                          🚀 Send to Hiring Pipeline
+                        </button>
+                      )
                     )}
                     {selectedCand.status !== 'rejected' && (
                       <button onClick={() => moveStage(selectedCand, 'rejected')}

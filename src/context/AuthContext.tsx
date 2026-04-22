@@ -316,7 +316,7 @@ export const useAuth = () => {
 
 // ─── Role Display Helpers ─────────────────────────────────────────────────────
 export const ROLE_LABELS: Record<EmployeeRole, string> = {
-  super_admin:         'Super Admin',
+  super_admin:         'Founder',
   hr_manager:          'HR Manager',
   finance_manager:     'Finance Manager',
   operations_manager:  'Operations Manager',

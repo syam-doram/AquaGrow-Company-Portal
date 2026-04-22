@@ -8,6 +8,7 @@ import {
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { useAuth } from '../context/AuthContext';
+import { useHiring } from '../context/HiringContext';
 
 // ── Types ──────────────────────────────────────────────────────────────────────
 export type HiringStatus =
@@ -83,7 +84,7 @@ const AVATAR_COLORS = [
 ];
 
 // ── Seed Data ──────────────────────────────────────────────────────────────────
-const SEED: Candidate[] = [
+export const SEED: Candidate[] = [
   {
     id: 'C001', avatar: 'AM', name: 'Arjun Mehta',
     email: 'arjun.m@gmail.com', phone: '+91 98765 11111',
@@ -734,7 +735,13 @@ const CandidatePanel = ({
 
 // ── Main Page ──────────────────────────────────────────────────────────────────
 const HiringPipeline: React.FC = () => {
-  const [candidates, setCandidates] = useState<Candidate[]>(SEED);
+  // ── Source of truth: shared HiringContext (fed by Recruitment page) ──────
+  const {
+    candidates,
+    addCandidate,
+    updateCandidate,
+  } = useHiring();
+
   const [selected, setSelected] = useState<Candidate | null>(null);
   const [showAdd, setShowAdd] = useState(false);
   const [search, setSearch] = useState('');
@@ -757,10 +764,9 @@ const HiringPipeline: React.FC = () => {
     rejected: candidates.filter(c => c.status === 'rejected').length,
   }), [candidates]);
 
-  const handleAdd = (c: Candidate) => setCandidates(p => [c, ...p]);
-
+  const handleAdd = (c: Candidate) => addCandidate(c);
   const handleStatusUpdate = (id: string, status: HiringStatus, extras: Partial<Candidate> = {}) => {
-    setCandidates(p => p.map(c => c.id === id ? { ...c, status, ...extras } : c));
+    updateCandidate(id, status, extras);
     setSelected(p => p?.id === id ? { ...p!, status, ...extras } : p);
   };
 
