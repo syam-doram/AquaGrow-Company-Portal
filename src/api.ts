@@ -96,6 +96,7 @@ async function apiFetchPrivileged<T = any>(path: string, options: RequestInit = 
   return res.json();
 }
 
+const pGet  = <T>(path: string)            => apiFetchPrivileged<T>(path);
 const pPost = <T>(path: string, body: any) => apiFetchPrivileged<T>(path, { method: 'POST', body: JSON.stringify(body) });
 const pPut  = <T>(path: string, body: any) => apiFetchPrivileged<T>(path, { method: 'PUT',  body: JSON.stringify(body) });
 const pDel  = <T>(path: string)            => apiFetchPrivileged<T>(path, { method: 'DELETE' });
@@ -185,13 +186,13 @@ export const hrmsApi = {
 
   // ════════════════════════════════════════════════════════════════════════════
   //  RECRUITMENT — CANDIDATES
-  //  Write operations use apiFetchPrivileged to auto-elevate on 403 so that
-  //  candidate data is always persisted to MongoDB regardless of the logged-in role.
+  //  All operations use apiFetchPrivileged: auto-elevates on 403 so candidates
+  //  are always fetched from and saved to MongoDB regardless of logged-in role.
   // ════════════════════════════════════════════════════════════════════════════
   candidates: {
     list:   (params?: { jobId?: string; status?: string }) => {
       const q = params ? '?' + new URLSearchParams(params as any).toString() : '';
-      return get<any[]>(`/candidates${q}`);
+      return pGet<any[]>(`/candidates${q}`);
     },
     create: (data: any) => pPost<any>('/candidates', data),
     update: (id: string, data: any) => pPut<any>(`/candidates/${id}`, data),

@@ -134,23 +134,13 @@ const Recruitment: React.FC = () => {
     setFetching(true);
     setApiError(null);
     try {
-      // Fetch jobs and candidates independently so one 403 doesn't break both
-      const jobsData = await hrmsApi.jobs.list().catch(() => [] as any[]);
+      // Both calls use apiFetchPrivileged — auto-elevates on 403 transparently
+      const [jobsData, candsData] = await Promise.all([
+        hrmsApi.jobs.list(),
+        hrmsApi.candidates.list(),
+      ]);
       setJobs(jobsData.map(normalize));
-
-      try {
-        const candsData = await hrmsApi.candidates.list();
-        setCandidates(candsData.map(normalize));
-      } catch (candErr: any) {
-        const isAuth = candErr.message?.includes('403') || candErr.message?.includes('401')
-          || candErr.message?.toLowerCase().includes('forbidden')
-          || candErr.message?.toLowerCase().includes('unauthorized');
-        if (isAuth) {
-          setApiError('candidate_access');   // soft error — show banner, not toast
-        } else {
-          toast.error(candErr.message ?? 'Failed to load candidates');
-        }
-      }
+      setCandidates(candsData.map(normalize));
     } catch (err: any) {
       toast.error(err.message ?? 'Failed to load recruitment data');
     } finally {
