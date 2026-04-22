@@ -112,18 +112,12 @@ const CandidatePortal: React.FC<Props> = ({ candidateId }) => {
   const [docs, setDocs]         = useState<Docs>({});
   const [declared, setDeclared] = useState(false);
 
-  // Fetch candidate on load
-  // NOTE: The backend does not expose GET /candidates/:id.
-  // We fetch the full list and find the candidate by _id client-side.
+  // Fetch candidate on load using the new public GET /candidates/:id route
   useEffect(() => {
     if (!candidateId) return;
     (async () => {
       try {
-        const list: any[] = await privFetch('/candidates');
-        const data = list.find(
-          (c: any) => c._id === candidateId || c.id === candidateId
-        );
-        if (!data) throw new Error('not_found');
+        const data = await privFetch(`/candidates/${candidateId}`);
         setCandidate(data);
         setPersonal(p => ({ ...p, fullName: data.name ?? '' }));
         setContact(c => ({ ...c, phone: data.phone ?? '', personalEmail: data.email ?? '' }));
@@ -147,7 +141,8 @@ const CandidatePortal: React.FC<Props> = ({ candidateId }) => {
     try {
       const payload = { onboardingData: { personal, contact, prof, bank, docs, submittedAt: new Date().toISOString() }, onboardingStatus: 'submitted' };
       if (candidateId) {
-        await privFetch(`/candidates/${candidateId}`, { method: 'PUT', body: JSON.stringify(payload) });
+        // Use the public /onboarding endpoint — no privileged token needed
+        await privFetch(`/candidates/${candidateId}/onboarding`, { method: 'PUT', body: JSON.stringify(payload) });
       }
       setDone(true);
     } catch { toast.error('Failed to submit. Please try again.'); }
