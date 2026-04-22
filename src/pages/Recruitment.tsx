@@ -928,15 +928,35 @@ const Recruitment: React.FC = () => {
 
                 {/* Notes */}
                 {selectedCand.notes && (
-                  <div className="p-3 rounded-xl mb-5" style={{ background: 'oklch(1 0 0 / 3%)', border: '1px solid oklch(1 0 0 / 8%)' }}>
-                    <p className="text-[9px] uppercase tracking-widest font-bold mb-1.5" style={{ color: 'oklch(0.45 0.02 210)' }}>Notes</p>
-                    <p className="text-xs" style={{ color: 'oklch(0.6 0.02 210)' }}>{selectedCand.notes}</p>
+                  <div className="p-3 rounded-xl mb-5" style={{ background: 'var(--aq-stat-bg)', border: '1px solid var(--aq-glass-border)' }}>
+                    <p className="text-[9px] uppercase tracking-widest font-bold mb-1.5" style={{ color: 'var(--aq-text-faint)' }}>Notes</p>
+                    <p className="text-xs" style={{ color: 'var(--aq-text-secondary)' }}>{selectedCand.notes}</p>
                   </div>
                 )}
 
+                {/* Onboarding link */}
+                <div className="p-3 rounded-xl mb-5" style={{ background: 'oklch(0.60 0.17 167 / 0.06)', border: '1px solid oklch(0.60 0.17 167 / 0.2)' }}>
+                  <p className="text-[9px] uppercase tracking-widest font-bold mb-2" style={{ color: 'var(--primary)' }}>📋 Onboarding Link</p>
+                  <p className="text-[10px] mb-2" style={{ color: 'var(--aq-text-muted)' }}>
+                    Share this link with the candidate to collect their documents & details.
+                  </p>
+                  <div className="flex gap-2">
+                    <code className="flex-1 text-[9px] px-2 py-1.5 rounded-lg truncate" style={{ background: 'var(--aq-ghost-bg)', color: 'var(--aq-text-secondary)' }}>
+                      {`${window.location.origin}/onboarding/${selectedCand.id}`}
+                    </code>
+                    <button onClick={() => {
+                      navigator.clipboard.writeText(`${window.location.origin}/onboarding/${selectedCand.id}`);
+                      toast.success('Onboarding link copied!');
+                    }} className="px-2.5 py-1.5 rounded-lg text-[9px] font-bold shrink-0 transition-all"
+                      style={{ background: 'oklch(0.60 0.17 167 / 0.15)', color: 'var(--primary)', border: '1px solid oklch(0.60 0.17 167 / 0.3)' }}>
+                      Copy
+                    </button>
+                  </div>
+                </div>
+
                 {/* Actions */}
                 {canManage && (
-                  <div className="space-y-2.5" style={{ borderTop: '1px solid oklch(1 0 0 / 8%)', paddingTop: '1.25rem' }}>
+                  <div className="space-y-2.5" style={{ borderTop: '1px solid var(--aq-glass-border)', paddingTop: '1.25rem' }}>
                     {selectedCand.status === 'selected' && !selectedCand.offerStatus && (
                       <button onClick={() => { setShowOfferModal(true); setOfferForm({ offeredSalary: 0, joiningDate: '' }); }}
                         className="aq-btn-primary w-full justify-center !text-xs">

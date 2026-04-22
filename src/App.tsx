@@ -282,6 +282,18 @@ const AppContent: React.FC = () => {
 
 // ─── Root ──────────────────────────────────────────────────────────────────────
 export default function App() {
+  // ── Public /onboarding/:id route — no auth required ──────────────────────────
+  const pathname = window.location.pathname;
+  const onboardMatch = pathname.match(/^\/onboarding\/([a-zA-Z0-9]+)/);
+  if (onboardMatch) {
+    return (
+      <>
+        <CandidatePortal candidateId={onboardMatch[1]} />
+        <Toaster position="top-right" richColors />
+      </>
+    );
+  }
+
   return (
     <AuthProvider>
       <HiringProvider>
