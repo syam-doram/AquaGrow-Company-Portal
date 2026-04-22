@@ -21,6 +21,8 @@ import TicketSystem from './pages/TicketSystem';
 import PerformanceReviews from './pages/PerformanceReviews';
 import AdminReports from './pages/AdminReports';
 import FullFinalSettlement from './pages/FullFinalSettlement';
+import HiringPipeline from './pages/HiringPipeline';
+import CandidatePortal from './pages/CandidatePortal';
 
 import { Toaster } from './components/ui/sonner';
 import { motion, AnimatePresence } from 'motion/react';
@@ -244,6 +246,13 @@ const AppContent: React.FC = () => {
       case 'tickets-admin':
         return hasPermission('manage_tickets')
           ? <TicketSystem admin={true} /> : <TicketSystem admin={false} />;
+
+      case 'hiring-pipeline':
+        return (hasRole('hr_manager') || hasRole('super_admin'))
+          ? <HiringPipeline /> : <Dashboard />;
+
+      case 'candidate-portal':
+        return <CandidatePortal />;
 
       // ── System ─────────────────────────────────────────────────────────
       case 'roles':

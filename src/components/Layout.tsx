@@ -62,8 +62,9 @@ const ALL_NAV_GROUPS: { group: string; items: NavItem[] }[] = [
     // ── HR / Admin tools (super_admin + hr_manager + operations for some) ──
     group: 'HR & Admin',
     items: [
-      { id: 'recruitment',   label: 'Recruitment',    sub: 'Hire & onboard talent',  icon: UserPlus,     roles: ['super_admin','hr_manager'], isNew: true },
-      { id: 'employees',     label: 'Employees',      sub: 'Team directory',         icon: Users,        roles: ['super_admin','hr_manager'] },
+      { id: 'recruitment',      label: 'Recruitment',    sub: 'Job posts & pipeline',   icon: UserPlus,     roles: ['super_admin','hr_manager'], isNew: true },
+      { id: 'hiring-pipeline',  label: 'Hiring Pipeline',sub: 'Invite → BGV → Hire',    icon: Users,        roles: ['super_admin','hr_manager'], isNew: true },
+      { id: 'employees',        label: 'Employees',      sub: 'Team directory',         icon: Users,        roles: ['super_admin','hr_manager'] },
       { id: 'leave-admin',   label: 'Leave Approvals',sub: 'Approve requests',       icon: CalendarDays, roles: ['super_admin','hr_manager','operations_manager'] },
       { id: 'att-admin',     label: 'Timesheet Admin',sub: 'Full team records',      icon: Clock,        roles: ['super_admin','hr_manager','operations_manager'] },
       { id: 'performance',   label: 'Performance',    sub: 'Reviews & ratings',      icon: TrendingUp,   roles: ['super_admin','hr_manager','operations_manager'] },
