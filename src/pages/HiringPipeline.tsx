@@ -743,7 +743,6 @@ const HiringPipeline: React.FC = () => {
   } = useHiring();
 
   const [selected, setSelected] = useState<Candidate | null>(null);
-  const [showAdd, setShowAdd] = useState(false);
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState<HiringStatus | 'all'>('all');
   const [view, setView] = useState<'pipeline' | 'list'>('pipeline');
@@ -812,9 +811,11 @@ const HiringPipeline: React.FC = () => {
               </button>
             ))}
           </div>
-          <button onClick={() => setShowAdd(true)} className="aq-btn-primary">
-            <UserPlus size={14} /> Add Candidate
-          </button>
+          {/* Candidates enter via Recruitment → Offer Accepted → Auto-added here */}
+          <div className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-[9px] font-semibold"
+            style={{ background: 'oklch(0.55 0.19 167 / 0.08)', color: 'var(--aq-text-muted)', border: '1px solid oklch(0.55 0.19 167 / 0.15)' }}>
+            📥 Candidates arrive from Recruitment
+          </div>
         </div>
       </div>
 
@@ -957,7 +958,6 @@ const HiringPipeline: React.FC = () => {
       )}
 
       {/* Modals */}
-      {showAdd && <AddCandidateModal onClose={() => setShowAdd(false)} onAdd={handleAdd} />}
       {selected && (
         <CandidatePanel
           candidate={selected}

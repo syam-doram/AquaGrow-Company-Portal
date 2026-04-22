@@ -128,15 +128,29 @@ const Recruitment: React.FC = () => {
   const [saving, setSaving]       = useState(false);
 
   // ── Fetch ─────────────────────────────────────────────────────────────────────
+  const [apiError, setApiError] = useState<string | null>(null);
+
   const fetchAll = useCallback(async () => {
     setFetching(true);
+    setApiError(null);
     try {
-      const [jobsData, candsData] = await Promise.all([
-        hrmsApi.jobs.list(),
-        hrmsApi.candidates.list(),
-      ]);
+      // Fetch jobs and candidates independently so one 403 doesn't break both
+      const jobsData = await hrmsApi.jobs.list().catch(() => [] as any[]);
       setJobs(jobsData.map(normalize));
-      setCandidates(candsData.map(normalize));
+
+      try {
+        const candsData = await hrmsApi.candidates.list();
+        setCandidates(candsData.map(normalize));
+      } catch (candErr: any) {
+        const isAuth = candErr.message?.includes('403') || candErr.message?.includes('401')
+          || candErr.message?.toLowerCase().includes('forbidden')
+          || candErr.message?.toLowerCase().includes('unauthorized');
+        if (isAuth) {
+          setApiError('candidate_access');   // soft error — show banner, not toast
+        } else {
+          toast.error(candErr.message ?? 'Failed to load candidates');
+        }
+      }
     } catch (err: any) {
       toast.error(err.message ?? 'Failed to load recruitment data');
     } finally {
@@ -409,6 +423,33 @@ const Recruitment: React.FC = () => {
       ══════════════════════════════════════════════════════════════════════════ */}
       {activeTab === 'pipeline' && (
         <div className="space-y-4">
+
+          {/* ── API Access Banner ────────────────────────────────────────────── */}
+          {apiError === 'candidate_access' && (
+            <div className="flex items-start gap-3 p-4 rounded-2xl"
+              style={{
+                background: 'oklch(0.82 0.18 70 / 0.08)',
+                border: '1px solid oklch(0.82 0.18 70 / 0.25)',
+              }}>
+              <span style={{ fontSize: '18px', lineHeight: 1, flexShrink: 0 }}>⚠️</span>
+              <div className="flex-1">
+                <p className="text-xs font-bold mb-0.5" style={{ color: 'oklch(0.82 0.18 70)' }}>
+                  Candidate data access restricted by the server
+                </p>
+                <p className="text-[10px]" style={{ color: 'oklch(0.65 0.05 70)' }}>
+                  The API returned 403 Forbidden for <code className="font-mono">/api/hrms/candidates</code>.
+                  This is a backend permission issue — your HR role may not have access to this endpoint on the server.
+                  Candidates you add here will be saved locally for this session.
+                </p>
+              </div>
+              <button onClick={fetchAll}
+                className="text-[9px] font-bold px-2.5 py-1 rounded-lg shrink-0 transition-all"
+                style={{ background: 'oklch(0.82 0.18 70 / 0.15)', color: 'oklch(0.82 0.18 70)', border: '1px solid oklch(0.82 0.18 70 / 0.3)' }}>
+                Retry
+              </button>
+            </div>
+          )}
+
           {/* Filters */}
           <div className="flex gap-2 flex-wrap">
             <div className="relative flex-1 min-w-[180px]">
