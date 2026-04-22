@@ -211,22 +211,7 @@ const Recruitment: React.FC = () => {
   const saveCandidate = async (e: React.FormEvent) => {
     e.preventDefault(); setSaving(true);
     try {
-      let created: any;
-      try {
-        created = await hrmsApi.candidates.create(candForm);
-      } catch (apiErr: any) {
-        // 403/401 — save locally so the pipeline still works
-        const blocked = apiErr.message?.includes('403') || apiErr.message?.includes('401')
-          || apiErr.message?.toLowerCase().includes('forbidden')
-          || apiErr.message?.toLowerCase().includes('unauthorized')
-          || apiErr.message?.toLowerCase().includes('hr manager');
-        if (blocked) {
-          created = { ...candForm, id: `LOCAL-${Date.now()}`, _id: `LOCAL-${Date.now()}`, createdAt: new Date().toISOString() };
-          setApiError('candidate_access');
-        } else {
-          throw apiErr;
-        }
-      }
+      const created = await hrmsApi.candidates.create(candForm);
       setCandidates(prev => [normalize(created), ...prev]);
       toast.success(`👤 ${candForm.name} added to pipeline!`);
       setShowCandModal(false); setCandForm(EMPTY_CAND);
@@ -238,7 +223,7 @@ const Recruitment: React.FC = () => {
     if (movingId) return;
     setMovingId(cand.id);
     try {
-      try { await hrmsApi.candidates.update(cand.id, { status: newStatus }); } catch {/* local fallback */}
+      await hrmsApi.candidates.update(cand.id, { status: newStatus });
       setCandidates(prev => prev.map(c => c.id === cand.id ? { ...c, status: newStatus } : c));
       if (selectedCand?.id === cand.id) setSelectedCand(p => p ? { ...p, status: newStatus } : null);
       toast.success(`${cand.name} → ${stageCfg(newStatus).label}`);
@@ -246,7 +231,15 @@ const Recruitment: React.FC = () => {
     finally { setMovingId(null); }
   };
 
+  // moveNext: when at 'selected', open the Send Offer modal instead of auto-advancing
   const moveNext = (cand: Candidate) => {
+    if (cand.status === 'selected') {
+      // Must send offer letter before moving to 'offered' stage
+      setSelectedCand(cand);
+      setOfferForm({ offeredSalary: cand.offeredSalary ?? 0, joiningDate: cand.joiningDate ?? '' });
+      setShowOfferModal(true);
+      return;
+    }
     const nonRejected = STAGE_ORDER.filter((s): s is Exclude<CandidateStatus,'rejected'> => s !== 'rejected');
     const curIdx = nonRejected.indexOf(cand.status as Exclude<CandidateStatus,'rejected'>);
     if (curIdx >= 0 && curIdx < nonRejected.length - 1) moveStage(cand, nonRejected[curIdx + 1]);
@@ -267,11 +260,10 @@ const Recruitment: React.FC = () => {
         joiningDate: offerForm.joiningDate,
         offerStatus: 'pending' as const,
       };
-      // Try API, silently fall back to local on 403
-      try { await hrmsApi.candidates.update(selectedCand.id, updates); } catch {/* local fallback */}
+      await hrmsApi.candidates.update(selectedCand.id, updates);
       setCandidates(prev => prev.map(c => c.id === selectedCand.id ? { ...c, ...updates } : c));
-      if (selectedCand) setSelectedCand(p => p ? { ...p, ...updates } : null);
-      toast.success(`📩 Offer sent to ${selectedCand.name}!`);
+      setSelectedCand(p => p ? { ...p, ...updates } : null);
+      toast.success(`📩 Offer letter sent to ${selectedCand.name}! Moved to "Offer Sent" stage.`);
       setShowOfferModal(false);
     } catch (err: any) { toast.error(err.message ?? 'Failed to send offer'); }
     finally { setSaving(false); }
@@ -312,8 +304,7 @@ const Recruitment: React.FC = () => {
   const updateOfferStatus = async (candId: string, offerStatus: 'accepted' | 'declined') => {
     try {
       const extra = offerStatus === 'declined' ? { status: 'rejected' as CandidateStatus } : {};
-      // Try API, silently ignore 403 — local state drives the pipeline
-      try { await hrmsApi.candidates.update(candId, { offerStatus, ...extra }); } catch {/* local fallback */}
+      await hrmsApi.candidates.update(candId, { offerStatus, ...extra });
       setCandidates(prev => prev.map(c => c.id === candId ? { ...c, offerStatus, ...extra } : c));
 
       // Auto-push to Hiring Pipeline when offer is accepted
