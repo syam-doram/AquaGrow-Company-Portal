@@ -766,8 +766,23 @@ const HiringPipeline: React.FC = () => {
 
   const handleAdd = (c: Candidate) => addCandidate(c);
   const handleStatusUpdate = (id: string, status: HiringStatus, extras: Partial<Candidate> = {}) => {
-    updateCandidate(id, status, extras);
-    setSelected(p => p?.id === id ? { ...p!, status, ...extras } : p);
+    // Stamp today's date when hiring is confirmed
+    const finalExtras = status === 'hired'
+      ? { ...extras, hiredAt: new Date().toISOString().slice(0, 10) }
+      : extras;
+
+    updateCandidate(id, status, finalExtras);
+    setSelected(p => p?.id === id ? { ...p!, status, ...finalExtras } : p);
+
+    // Notify on key milestones
+    if (status === 'hired') {
+      const name = candidates.find(c => c.id === id)?.name ?? 'Candidate';
+      const empId = finalExtras.employeeId ?? extras.employeeId;
+      toast.success(
+        `🎉 ${name} is now an Employee!${empId ? ` · ${empId}` : ''}`,
+        { description: 'Auto-added to the Employee Directory.' }
+      );
+    }
   };
 
   const selIdx = selected ? candidates.findIndex(c => c.id === selected.id) : 0;

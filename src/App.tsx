@@ -21,7 +21,7 @@ import TicketSystem from './pages/TicketSystem';
 import PerformanceReviews from './pages/PerformanceReviews';
 import AdminReports from './pages/AdminReports';
 import FullFinalSettlement from './pages/FullFinalSettlement';
-import HiringPipeline, { SEED as HIRING_SEED } from './pages/HiringPipeline';
+import HiringPipeline from './pages/HiringPipeline';
 import CandidatePortal from './pages/CandidatePortal';
 import { HiringProvider } from './context/HiringContext';
 
@@ -284,7 +284,7 @@ const AppContent: React.FC = () => {
 export default function App() {
   return (
     <AuthProvider>
-      <HiringProvider initialCandidates={HIRING_SEED}>
+      <HiringProvider>
         <AppContent />
       </HiringProvider>
       <Toaster position="top-right" richColors theme="dark" />

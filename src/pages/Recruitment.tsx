@@ -144,6 +144,32 @@ const Recruitment: React.FC = () => {
     }
   }, []);
 
+  // ── Auto-sync accepted-offer candidates into HiringContext ─────────────────────
+  // Runs whenever candidates list refreshes from the API.
+  // Any candidate whose offer was accepted will auto-appear in Hiring Pipeline.
+  useEffect(() => {
+    if (candidates.length === 0) return;
+    candidates.forEach(cand => {
+      if (cand.offerStatus === 'accepted' && !inHiring(cand.id)) {
+        const job = jobs.find(j => j.id === cand.jobId);
+        const today = new Date().toISOString().slice(0, 10);
+        const hiringCand: HiringCandidate = {
+          id:          cand.id,
+          avatar:      cand.name.split(' ').map((w: string) => w[0]).slice(0, 2).join('').toUpperCase(),
+          name:        cand.name,
+          email:       cand.email,
+          phone:       cand.phone ?? '',
+          appliedRole: cand.jobRole,
+          department:  job?.department ?? '',
+          status:      'invited',
+          invitedAt:   today,
+        };
+        addToHiring(hiringCand);
+      }
+    });
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [candidates]);
+
   useEffect(() => { fetchAll(); }, [fetchAll]);
 
   // ── Derived ───────────────────────────────────────────────────────────────────
