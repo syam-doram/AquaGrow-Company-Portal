@@ -256,7 +256,7 @@ const RoleAccessGuide: React.FC = () => {
             exit={{ height: 0, opacity: 0 }} transition={{ duration: 0.2 }}
             className="overflow-hidden" style={{ borderTop: '1px solid var(--aq-glass-border)' }}>
             <div className="p-4 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-              {ROLE_CONFIG.map(r => (
+              {ROLE_CONFIG.filter(r => r.value !== 'super_admin').map(r => (
                 <div key={r.value} className="rounded-xl p-3.5"
                   style={{ background: `${r.color}08`, border: `1px solid ${r.color}20` }}>
                   <div className="flex items-center gap-2 mb-2">
@@ -624,7 +624,7 @@ const EmployeeOnboarding: React.FC = () => {
                       Role <span style={{ color: 'oklch(0.72 0.19 167)', fontWeight: 400, textTransform: 'none' }}>· determines what this employee can see</span>
                     </label>
                     <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
-                      {ROLE_CONFIG.map(r => (
+                      {ROLE_CONFIG.filter(r => r.value !== 'super_admin').map(r => (
                         <button key={r.value} type="button" onClick={() => setForm(f => ({ ...f, role: r.value }))}
                           className="p-2.5 rounded-xl text-left transition-all"
                           style={{

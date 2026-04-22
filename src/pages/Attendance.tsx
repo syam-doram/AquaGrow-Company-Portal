@@ -232,32 +232,54 @@ const Attendance: React.FC = () => {
       {/* ── Two-column: Calendar + Side Panel ───────────────────────────────── */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
 
-        {/* ── Calendar (2/3 width) ──────────────────────────────────────────── */}
-        <div className="lg:col-span-2 aq-card">
+        {/* ── Calendar (2/3 width) — Premium Dark Glass ─────────────────────── */}
+        <div className="lg:col-span-2 overflow-hidden"
+          style={{
+            background: 'linear-gradient(145deg, oklch(0.13 0.02 250), oklch(0.10 0.015 240))',
+            border: '1px solid oklch(1 0 0 / 0.08)',
+            borderRadius: '20px',
+            boxShadow: '0 0 0 1px oklch(1 0 0 / 0.04), 0 24px 60px oklch(0 0 0 / 0.5), inset 0 1px 0 oklch(1 0 0 / 0.06)',
+          }}>
 
           {/* Month nav + month strip */}
-          <div className="px-4 py-3 space-y-2.5" style={{ borderBottom: '1px solid var(--aq-glass-border)' }}>
+          <div className="px-5 py-4 space-y-3"
+            style={{
+              borderBottom: '1px solid oklch(1 0 0 / 0.07)',
+              background: 'linear-gradient(180deg, oklch(1 0 0 / 0.04), transparent)',
+            }}>
             <div className="flex items-center justify-between">
-              <button onClick={prevMonth} className="aq-btn-ghost !p-1.5 !rounded-xl"><ChevronLeft size={15} /></button>
+              <button onClick={prevMonth}
+                className="w-8 h-8 rounded-xl flex items-center justify-center transition-all"
+                style={{ background: 'oklch(1 0 0 / 0.05)', border: '1px solid oklch(1 0 0 / 0.08)', color: 'oklch(0.85 0 0)' }}
+                onMouseOver={e => (e.currentTarget.style.background = 'oklch(0.72 0.19 167 / 0.15)')}
+                onMouseOut={e => (e.currentTarget.style.background = 'oklch(1 0 0 / 0.05)')}>
+                <ChevronLeft size={14} />
+              </button>
               <div className="text-center">
-                <p className="text-sm font-display font-black" style={{ color: 'var(--aq-text-primary)' }}>
+                <p className="text-base font-display font-black" style={{ color: 'oklch(0.95 0.01 250)' }}>
                   {MONTHS_FULL[calMonth]} {calYear}
                 </p>
               </div>
-              <button onClick={nextMonth} className="aq-btn-ghost !p-1.5 !rounded-xl"><ChevronRight size={15} /></button>
+              <button onClick={nextMonth}
+                className="w-8 h-8 rounded-xl flex items-center justify-center transition-all"
+                style={{ background: 'oklch(1 0 0 / 0.05)', border: '1px solid oklch(1 0 0 / 0.08)', color: 'oklch(0.85 0 0)' }}
+                onMouseOver={e => (e.currentTarget.style.background = 'oklch(0.72 0.19 167 / 0.15)')}
+                onMouseOut={e => (e.currentTarget.style.background = 'oklch(1 0 0 / 0.05)')}>
+                <ChevronRight size={14} />
+              </button>
             </div>
 
             {/* Month strip */}
-            <div className="flex gap-1 overflow-x-auto">
+            <div className="flex gap-1 overflow-x-auto pb-0.5" style={{ scrollbarWidth: 'none' }}>
               {MONTHS_SHORT.map((m, mi) => {
                 const active  = mi === calMonth;
                 const hasData = records.some(r => { const d = new Date(r.date); return d.getMonth() === mi && d.getFullYear() === calYear; });
                 return (
                   <button key={m} onClick={() => setCalMonth(mi)}
-                    className="relative shrink-0 px-2.5 py-1 rounded-lg text-[9px] font-black transition-all"
+                    className="relative shrink-0 px-3 py-1.5 rounded-lg text-[9px] font-black transition-all"
                     style={active
-                      ? { background: 'oklch(0.72 0.19 167 / 0.15)', color: 'oklch(0.72 0.19 167)', border: '1px solid oklch(0.72 0.19 167 / 0.3)' }
-                      : { background: 'var(--aq-glass-bg)', color: 'var(--aq-text-muted)', border: '1px solid var(--aq-glass-border)' }}>
+                      ? { background: 'oklch(0.72 0.19 167 / 0.2)', color: 'oklch(0.80 0.19 167)', border: '1px solid oklch(0.72 0.19 167 / 0.4)', boxShadow: '0 0 12px oklch(0.72 0.19 167 / 0.15)' }
+                      : { background: 'oklch(1 0 0 / 0.04)', color: 'oklch(0.55 0.02 250)', border: '1px solid oklch(1 0 0 / 0.06)' }}>
                     {m}
                     {hasData && !active && <span className="absolute top-0.5 right-0.5 w-1 h-1 rounded-full" style={{ background: 'oklch(0.72 0.19 167)' }} />}
                   </button>
@@ -267,13 +289,18 @@ const Attendance: React.FC = () => {
           </div>
 
           {/* Weekday labels */}
-          <div className="grid grid-cols-7 px-3 pt-3 pb-2 gap-1">
+          <div className="grid grid-cols-7 px-3 pt-4 pb-2 gap-1.5">
             {WDAYS_F.map((d, i) => (
               <div key={`${d}${i}`} className="text-center py-1.5 rounded-lg"
                 style={{
-                  fontSize: '10px', fontWeight: 800, letterSpacing: '0.04em',
-                  color: i === 0 || i === 6 ? 'oklch(0.68 0.22 25 / 0.9)' : 'var(--aq-text-secondary)',
-                  background: i === 0 || i === 6 ? 'oklch(0.68 0.22 25 / 0.06)' : 'transparent',
+                  fontSize: '10px', fontWeight: 800, letterSpacing: '0.05em',
+                  color: i === 0 || i === 6
+                    ? 'oklch(0.68 0.22 25 / 0.7)'
+                    : 'oklch(0.50 0.02 250)',
+                  background: i === 0 || i === 6
+                    ? 'oklch(0.68 0.22 25 / 0.06)'
+                    : 'oklch(1 0 0 / 0.02)',
+                  border: '1px solid oklch(1 0 0 / 0.04)',
                 }}>
                 {d}
               </div>
@@ -282,96 +309,110 @@ const Attendance: React.FC = () => {
 
           {/* Day grid */}
           {fetching ? (
-            <div className="flex items-center justify-center py-12">
+            <div className="flex items-center justify-center py-14">
               <div className="w-7 h-7 border-2 rounded-full animate-spin"
-                style={{ borderColor: 'var(--aq-glass-border)', borderTopColor: 'oklch(0.72 0.19 167)' }} />
+                style={{ borderColor: 'oklch(1 0 0 / 0.08)', borderTopColor: 'oklch(0.72 0.19 167)' }} />
             </div>
           ) : (
-            <div className="grid grid-cols-7 gap-1.5 px-3 pb-4">
+            <div className="grid grid-cols-7 gap-2 px-3 pb-4">
               {Array.from({ length: startOffset }).map((_, i) => <div key={`p${i}`} />)}
               {calDays.map(day => {
-                const key    = dk(day);
-                const rec    = recordMap[key];
-                const cs     = getCellStyle(day, rec, leaves);
-                const h      = rec?.workingHours;
-                const future = isAfter(day, new Date()) && !isSameDay(day, new Date());
+                const key     = dk(day);
+                const rec     = recordMap[key];
+                const cs      = getCellStyle(day, rec, leaves);
+                const h       = rec?.workingHours;
+                const future  = isAfter(day, new Date()) && !isSameDay(day, new Date());
                 const hPctBar = h != null ? Math.min(100, (h / MAX_WORK_HOURS) * 100) : 0;
-                const isHol  = isHoliday(day);
-                const isLv   = isLeave(day, leaves) && !isHol;
-                const isWknd = isWeekend(day);
+                const isHol   = isHoliday(day);
+                const isLv    = isLeave(day, leaves) && !isHol;
+                const isWknd  = isWeekend(day);
+
+                // Cell background in premium dark
+                const cellBg = cs.isToday
+                  ? `linear-gradient(160deg, ${cs.color}28, ${cs.color}10)`
+                  : isHol
+                  ? 'linear-gradient(160deg, oklch(0.78 0.17 55 / 0.12), oklch(0.78 0.17 55 / 0.04))'
+                  : isLv
+                  ? 'linear-gradient(160deg, oklch(0.68 0.16 295 / 0.12), oklch(0.68 0.16 295 / 0.04))'
+                  : isWknd
+                  ? 'oklch(1 0 0 / 0.015)'
+                  : rec
+                  ? `linear-gradient(160deg, ${cs.color}14, ${cs.color}06)`
+                  : 'oklch(1 0 0 / 0.03)';
 
                 return (
                   <motion.button key={key}
-                    whileHover={!future && !isWknd ? { scale: 1.05, y: -2 } : {}}
+                    whileHover={!future && !isWknd ? { scale: 1.06, y: -2 } : {}}
                     whileTap={!future && !isWknd ? { scale: 0.96 } : {}}
                     onClick={() => openDay(day)}
                     disabled={future}
                     title={cs.label || holName(day) || ''}
-                    className="relative flex flex-col items-center justify-between rounded-2xl overflow-hidden transition-all group"
+                    className="relative flex flex-col items-center justify-between rounded-2xl overflow-hidden transition-all"
                     style={{
-                      height: '58px',
-                      background: cs.isToday
-                        ? `linear-gradient(160deg, ${cs.color}18, ${cs.color}08)`
-                        : isHol
-                        ? 'oklch(0.78 0.17 55 / 0.07)'
-                        : isLv
-                        ? 'oklch(0.68 0.16 295 / 0.07)'
-                        : isWknd
-                        ? 'oklch(1 0 0 / 0.02)'
-                        : rec
-                        ? `${cs.color}10`
-                        : 'var(--aq-card-bg)',
+                      height: '62px',
+                      background: cellBg,
                       border: cs.isToday
-                        ? `2px solid ${cs.color}80`
-                        : `1px solid ${cs.color}22`,
-                      opacity: future ? 0.18 : 1,
+                        ? `1.5px solid ${cs.color}60`
+                        : isHol || isLv
+                        ? `1px solid ${cs.color}30`
+                        : `1px solid oklch(1 0 0 / 0.06)`,
+                      opacity: future ? 0.15 : 1,
                       cursor: future || isWknd ? 'default' : 'pointer',
                       boxShadow: cs.isToday
-                        ? `0 0 0 4px ${cs.color}18, 0 4px 16px ${cs.color}20`
+                        ? `0 0 0 3px ${cs.color}18, 0 8px 24px ${cs.color}22`
                         : rec && !cs.frozen
-                        ? `0 2px 8px ${cs.color}15`
+                        ? `0 2px 12px oklch(0 0 0 / 0.25)`
                         : 'none',
                     }}>
 
-                    {/* Top: date number + icons */}
+                    {/* Top: date number + sub-labels */}
                     <div className="flex flex-col items-center pt-2 gap-0.5">
                       <span style={{
-                        fontSize: cs.isToday ? '15px' : '13px',
+                        fontSize: cs.isToday ? '16px' : '13px',
                         fontWeight: 900,
                         fontFamily: 'Space Grotesk, sans-serif',
-                        color: future || isWknd ? 'var(--aq-text-faint)' : cs.color,
+                        color: future
+                          ? 'oklch(0.30 0.01 250)'
+                          : isWknd && !isHol
+                          ? 'oklch(0.68 0.22 25 / 0.6)'
+                          : cs.color,
                         lineHeight: 1,
+                        textShadow: cs.isToday ? `0 0 12px ${cs.color}60` : 'none',
                       }}>
                         {format(day, 'd')}
                       </span>
-                      {isHol && <span style={{ fontSize: '10px', lineHeight: 1 }}>🎉</span>}
-                      {isLv  && <span style={{ fontSize: '10px', lineHeight: 1 }}>🏖</span>}
+                      {isHol && <span style={{ fontSize: '11px', lineHeight: 1 }}>🎉</span>}
+                      {isLv  && <span style={{ fontSize: '11px', lineHeight: 1 }}>🏖️</span>}
                       {cs.isToday && !isHol && !isLv && (
                         <span style={{
-                          fontSize: '6px', fontWeight: 900, letterSpacing: '0.06em',
+                          fontSize: '6px', fontWeight: 900, letterSpacing: '0.08em',
                           color: cs.color, textTransform: 'uppercase', lineHeight: 1,
+                          textShadow: `0 0 8px ${cs.color}80`,
                         }}>TODAY</span>
                       )}
                       {h != null && !cs.frozen && !isHol && !isLv && (
-                        <span style={{ fontSize: '8px', fontWeight: 700, color: cs.color, opacity: 0.85, lineHeight: 1 }}>
+                        <span style={{
+                          fontSize: '8px', fontWeight: 700,
+                          color: cs.color, opacity: 0.9, lineHeight: 1,
+                        }}>
                           {h}h
                         </span>
                       )}
                     </div>
 
                     {/* Bottom: coloured status bar */}
-                    <div className="w-full" style={{ height: '4px', background: 'var(--aq-progress-track)' }}>
+                    <div className="w-full" style={{ height: '3px', background: 'oklch(1 0 0 / 0.05)' }}>
                       {!cs.frozen && h != null && (
-                        <div style={{ height: '100%', width: `${hPctBar}%`, background: cs.color, borderRadius: '0 2px 2px 0', transition: 'width 0.5s ease' }} />
+                        <div style={{ height: '100%', width: `${hPctBar}%`, background: `linear-gradient(90deg, ${cs.color}88, ${cs.color})`, borderRadius: '0 2px 2px 0', transition: 'width 0.6s ease', boxShadow: `0 0 6px ${cs.color}60` }} />
                       )}
                       {isHol && (
-                        <div style={{ height: '100%', width: '100%', background: 'oklch(0.78 0.17 55)', opacity: 0.6 }} />
+                        <div style={{ height: '100%', width: '100%', background: 'linear-gradient(90deg, oklch(0.78 0.17 55 / 0.4), oklch(0.78 0.17 55 / 0.7))' }} />
                       )}
                       {isLv && (
-                        <div style={{ height: '100%', width: '100%', background: 'oklch(0.68 0.16 295)', opacity: 0.6 }} />
+                        <div style={{ height: '100%', width: '100%', background: 'linear-gradient(90deg, oklch(0.68 0.16 295 / 0.4), oklch(0.68 0.16 295 / 0.7))' }} />
                       )}
                       {isWknd && !isHol && (
-                        <div style={{ height: '100%', width: '100%', background: 'oklch(0.68 0.22 25 / 0.3)' }} />
+                        <div style={{ height: '100%', width: '100%', background: 'oklch(0.68 0.22 25 / 0.2)' }} />
                       )}
                     </div>
                   </motion.button>
@@ -381,7 +422,8 @@ const Attendance: React.FC = () => {
           )}
 
           {/* Legend row */}
-          <div className="flex flex-wrap gap-x-3 gap-y-2 px-4 py-3" style={{ borderTop: '1px solid var(--aq-glass-border)' }}>
+          <div className="flex flex-wrap gap-x-3 gap-y-2 px-5 py-3.5"
+            style={{ borderTop: '1px solid oklch(1 0 0 / 0.07)' }}>
             {[
               { c: 'oklch(0.72 0.19 167)', l: 'Present'  },
               { c: 'oklch(0.82 0.18 70)',  l: 'Late'     },
@@ -390,9 +432,9 @@ const Attendance: React.FC = () => {
               { c: 'oklch(0.68 0.16 295)', l: 'Leave'    },
               { c: 'oklch(0.78 0.17 55)',  l: 'Holiday'  },
             ].map(x => (
-              <div key={x.l} className="flex items-center gap-1.5 px-2 py-1 rounded-lg"
-                style={{ background: `${x.c}10`, border: `1px solid ${x.c}22` }}>
-                <div className="w-2 h-2 rounded-full shrink-0" style={{ background: x.c }} />
+              <div key={x.l} className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg"
+                style={{ background: `${x.c}12`, border: `1px solid ${x.c}28` }}>
+                <div className="w-2 h-2 rounded-full shrink-0" style={{ background: x.c, boxShadow: `0 0 6px ${x.c}80` }} />
                 <span style={{ fontSize: '9px', fontWeight: 700, color: x.c }}>{x.l}</span>
               </div>
             ))}
