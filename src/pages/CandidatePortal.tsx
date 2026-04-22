@@ -101,6 +101,7 @@ const CandidatePortal: React.FC<Props> = ({ candidateId }) => {
   const [loading, setLoading] = useState(!!candidateId);
   const [saving, setSaving] = useState(false);
   const [done, setDone] = useState(false);
+  const [alreadyDone, setAlreadyDone] = useState(false);
   const [candidate, setCandidate] = useState<any>(null);
   const [error, setError] = useState('');
 
@@ -118,6 +119,12 @@ const CandidatePortal: React.FC<Props> = ({ candidateId }) => {
     (async () => {
       try {
         const data = await privFetch(`/candidates/${candidateId}`);
+        // 🔒 If already submitted, lock the form immediately
+        if (data.onboardingStatus === 'submitted') {
+          setCandidate(data);
+          setAlreadyDone(true);
+          return;
+        }
         setCandidate(data);
         setPersonal(p => ({ ...p, fullName: data.name ?? '' }));
         setContact(c => ({ ...c, phone: data.phone ?? '', personalEmail: data.email ?? '' }));
@@ -139,14 +146,19 @@ const CandidatePortal: React.FC<Props> = ({ candidateId }) => {
     if (bank.accountNo !== bank.confirmNo) { toast.error('Account numbers do not match'); return; }
     setSaving(true);
     try {
-      const payload = { onboardingData: { personal, contact, prof, bank, docs, submittedAt: new Date().toISOString() }, onboardingStatus: 'submitted' };
+      const payload = { onboardingData: { personal, contact, prof, bank, docs, submittedAt: new Date().toISOString() } };
       if (candidateId) {
-        // Use the public /onboarding endpoint — no privileged token needed
         await privFetch(`/candidates/${candidateId}/onboarding`, { method: 'PUT', body: JSON.stringify(payload) });
       }
       setDone(true);
-    } catch { toast.error('Failed to submit. Please try again.'); }
-    finally { setSaving(false); }
+    } catch (err: any) {
+      // 409 = already submitted (race condition or re-visit after submit)
+      if (err?.message?.includes('409') || err?.message?.includes('already')) {
+        setAlreadyDone(true);
+      } else {
+        toast.error('Failed to submit. Please try again.');
+      }
+    } finally { setSaving(false); }
   };
 
   // ── Loading ──────────────────────────────────────────────────────────────
@@ -155,6 +167,27 @@ const CandidatePortal: React.FC<Props> = ({ candidateId }) => {
       <div className="flex flex-col items-center gap-3">
         <Loader size={32} className="animate-spin" style={{ color: 'oklch(0.60 0.17 167)' }} />
         <p className="text-sm" style={{ color: 'var(--aq-text-muted)' }}>Loading your onboarding form…</p>
+      </div>
+    </div>
+  );
+
+  // ── Already Submitted ─────────────────────────────────────────────────────
+  if (alreadyDone) return (
+    <div className="min-h-screen flex items-center justify-center p-6" style={{ background: 'var(--background)' }}>
+      <div className="max-w-sm text-center">
+        <div className="w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-5"
+          style={{ background: 'oklch(0.58 0.18 240 / 0.12)', border: '2px solid oklch(0.58 0.18 240 / 0.4)' }}>
+          <CheckCircle size={36} style={{ color: 'oklch(0.58 0.18 240)' }} />
+        </div>
+        <h2 className="text-xl font-black mb-2" style={{ color: 'var(--aq-text-primary)', fontFamily: 'Space Grotesk, sans-serif' }}>
+          Already Submitted
+        </h2>
+        <p className="text-sm mb-1" style={{ color: 'var(--aq-text-secondary)' }}>
+          Hi <strong>{candidate?.name}</strong>, your onboarding form has already been submitted.
+        </p>
+        <p className="text-xs" style={{ color: 'var(--aq-text-muted)' }}>
+          HR will review your details and reach out to you soon. This link is now closed.
+        </p>
       </div>
     </div>
   );
