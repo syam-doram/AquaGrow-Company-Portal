@@ -518,45 +518,84 @@ const Recruitment: React.FC = () => {
                                 </div>
                               </div>
 
-                              {/* Source badge */}
+                              {/* Source badge + offer status */}
                               <div className="flex items-center justify-between">
                                 <span className="text-[8px] px-1.5 py-0.5 rounded-md font-bold"
                                   style={{ background: 'var(--aq-ghost-bg)', color: 'var(--aq-text-muted)' }}>
                                   {cand.source}
                                 </span>
-                                {cand.offeredSalary && (
+                                {cand.status === 'offered' ? (
+                                  <span className="text-[8px] px-1.5 py-0.5 rounded-md font-black"
+                                    style={
+                                      cand.offerStatus === 'accepted'
+                                        ? { background: 'oklch(0.55 0.19 167 / 0.15)', color: 'oklch(0.45 0.18 167)' }
+                                        : cand.offerStatus === 'declined'
+                                        ? { background: 'oklch(0.62 0.22 25 / 0.12)', color: 'oklch(0.55 0.20 25)' }
+                                        : { background: 'oklch(0.70 0.18 80 / 0.12)', color: 'oklch(0.60 0.16 80)' }
+                                    }>
+                                    {cand.offerStatus === 'accepted' ? '✓ Approved' : cand.offerStatus === 'declined' ? '✗ Rejected' : '⏳ Pending'}
+                                  </span>
+                                ) : cand.offeredSalary ? (
                                   <span className="text-[8px] font-bold" style={{ color: 'oklch(0.78 0.17 70)' }}>
                                     ₹{(cand.offeredSalary/1000).toFixed(0)}k
                                   </span>
-                                )}
+                                ) : null}
                               </div>
                             </div>
 
-                            {/* Stage navigation arrows (only for HR who can manage) */}
+                            {/* Bottom actions */}
                             {canManage && stage.status !== 'rejected' && (
-                              <div className="flex border-t opacity-0 group-hover:opacity-100 transition-opacity overflow-hidden"
-                                style={{ borderColor: 'oklch(1 0 0 / 8%)' }}>
-                                <button
-                                  onClick={e => { e.stopPropagation(); movePrev(cand); }}
-                                  disabled={!canGoPrev || isMoving}
-                                  className="flex-1 py-1.5 flex items-center justify-center transition-colors disabled:opacity-30"
-                                  style={{ color: 'oklch(0.55 0.02 210)' }}
-                                  title="Move back">
-                                  <ChevronLeft size={11} />
-                                </button>
-                                <div style={{ width: '1px', background: 'oklch(1 0 0 / 8%)' }} />
-                                <button
-                                  onClick={e => { e.stopPropagation(); moveNext(cand); }}
-                                  disabled={!canGoNext || isMoving}
-                                  className="flex-1 py-1.5 flex items-center justify-center transition-colors disabled:opacity-30"
-                                  style={{ color: stage.color }}
-                                  title="Advance stage">
-                                  {isMoving
-                                    ? <div className="w-2.5 h-2.5 border border-current border-t-transparent rounded-full animate-spin" />
-                                    : <ChevronRight size={11} />
-                                  }
-                                </button>
-                              </div>
+                              cand.status === 'offered' ? (
+                                /* ── Offer Sent: show Approve / Reject ─────────── */
+                                <div className="flex border-t overflow-hidden rounded-b-xl"
+                                  style={{ borderColor: 'var(--aq-glass-border)' }}>
+                                  <button
+                                    onClick={e => { e.stopPropagation(); updateOfferStatus(cand.id, 'accepted'); }}
+                                    disabled={cand.offerStatus === 'accepted'}
+                                    className="flex-1 py-2 flex items-center justify-center gap-1 text-[9px] font-black transition-all hover:opacity-90 disabled:opacity-50"
+                                    style={{ background: 'oklch(0.55 0.19 167 / 0.12)', color: 'oklch(0.45 0.18 167)' }}
+                                    title="Approve offer — moves to Hiring Pipeline">
+                                    {cand.offerStatus === 'accepted'
+                                      ? <><CheckCircle size={10} /> Approved</>
+                                      : <><CheckCircle size={10} /> Approve</>}
+                                  </button>
+                                  <div style={{ width: '1px', background: 'var(--aq-glass-border)' }} />
+                                  <button
+                                    onClick={e => { e.stopPropagation(); updateOfferStatus(cand.id, 'declined'); }}
+                                    disabled={cand.offerStatus === 'declined'}
+                                    className="flex-1 py-2 flex items-center justify-center gap-1 text-[9px] font-black transition-all hover:opacity-90 disabled:opacity-50"
+                                    style={{ background: 'oklch(0.62 0.22 25 / 0.10)', color: 'oklch(0.55 0.20 25)' }}
+                                    title="Reject offer">
+                                    {cand.offerStatus === 'declined'
+                                      ? <><XCircle size={10} /> Rejected</>
+                                      : <><XCircle size={10} /> Reject</>}
+                                  </button>
+                                </div>
+                              ) : (
+                                /* ── Other stages: prev/next arrows on hover ───── */
+                                <div className="flex border-t opacity-0 group-hover:opacity-100 transition-opacity overflow-hidden"
+                                  style={{ borderColor: 'var(--aq-glass-border)' }}>
+                                  <button
+                                    onClick={e => { e.stopPropagation(); movePrev(cand); }}
+                                    disabled={!canGoPrev || isMoving}
+                                    className="flex-1 py-1.5 flex items-center justify-center transition-colors disabled:opacity-30"
+                                    style={{ color: 'var(--aq-text-muted)' }}
+                                    title="Move back">
+                                    <ChevronLeft size={11} />
+                                  </button>
+                                  <div style={{ width: '1px', background: 'var(--aq-glass-border)' }} />
+                                  <button
+                                    onClick={e => { e.stopPropagation(); moveNext(cand); }}
+                                    disabled={!canGoNext || isMoving}
+                                    className="flex-1 py-1.5 flex items-center justify-center transition-colors disabled:opacity-30"
+                                    style={{ color: stage.color }}
+                                    title="Advance stage">
+                                    {isMoving
+                                      ? <div className="w-2.5 h-2.5 border border-current border-t-transparent rounded-full animate-spin" />
+                                      : <ChevronRight size={11} />}
+                                  </button>
+                                </div>
+                              )
                             )}
                           </motion.div>
                         );
