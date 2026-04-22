@@ -113,11 +113,17 @@ const CandidatePortal: React.FC<Props> = ({ candidateId }) => {
   const [declared, setDeclared] = useState(false);
 
   // Fetch candidate on load
+  // NOTE: The backend does not expose GET /candidates/:id.
+  // We fetch the full list and find the candidate by _id client-side.
   useEffect(() => {
     if (!candidateId) return;
     (async () => {
       try {
-        const data = await privFetch(`/candidates/${candidateId}`);
+        const list: any[] = await privFetch('/candidates');
+        const data = list.find(
+          (c: any) => c._id === candidateId || c.id === candidateId
+        );
+        if (!data) throw new Error('not_found');
         setCandidate(data);
         setPersonal(p => ({ ...p, fullName: data.name ?? '' }));
         setContact(c => ({ ...c, phone: data.phone ?? '', personalEmail: data.email ?? '' }));
