@@ -264,15 +264,13 @@ const ProgressBar = ({ value, color = 'bg-emerald-500' }: { value: number; color
   </div>
 );
 
-const StatCard = ({ label, value, sub, icon, color = 'text-emerald-400' }: { label: string; value: string | number; sub?: string; icon: React.ReactNode; color?: string }) => (
-  <div className="glass-panel p-5">
-    <div className="flex items-center justify-between mb-3">
-      <p className="text-[10px] text-zinc-500 uppercase tracking-widest font-bold">{label}</p>
-      <div className={`${color} opacity-60`}>{icon}</div>
-    </div>
-    <p className={`text-2xl font-display font-bold ${color}`}>{value}</p>
-    {sub && <p className="text-[10px] text-zinc-500 mt-1">{sub}</p>}
-  </div>
+const StatCard = ({ label, value, sub, emoji, color }: { label: string; value: string | number; sub?: string; emoji: string; color: string }) => (
+  <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="aq-kpi-card">
+    <span className="aq-kpi-icon">{emoji}</span>
+    <span className="aq-kpi-number" style={{ color }}>{value}</span>
+    <span className="aq-kpi-label">{label}</span>
+    {sub && <span style={{ fontSize: '0.55rem', color: 'var(--aq-text-muted)', marginTop: '-0.1rem' }}>{sub}</span>}
+  </motion.div>
 );
 
 const SectionHeader = ({ title, sub }: { title: string; sub?: string }) => (
@@ -318,6 +316,9 @@ const EmployeeModal = ({ emp, onClose, onSave }: {
     </div>
   );
 
+  // Roles that can be ASSIGNED via the UI — never allow promoting someone to ADMIN/founder
+  const ASSIGNABLE_ROLES = Object.keys(ROLE_META).filter(k => k !== 'ADMIN') as EmployeeRole[];
+
   return (
     <AnimatePresence>
       <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
@@ -339,8 +340,11 @@ const EmployeeModal = ({ emp, onClose, onSave }: {
               <label className="block text-[10px] text-zinc-500 uppercase font-bold mb-1.5">Role</label>
               <select value={form.role} onChange={e => setForm(f => ({ ...f, role: e.target.value as EmployeeRole }))}
                 className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 text-sm text-zinc-100 outline-none focus:border-emerald-500/50 transition-colors">
-                {Object.entries(ROLE_META).map(([k, v]) => <option key={k} value={k} className="bg-zinc-900">{v.label}</option>)}
+                {ASSIGNABLE_ROLES.map(k => (
+                  <option key={k} value={k} className="bg-zinc-900">{ROLE_META[k].label}</option>
+                ))}
               </select>
+              <p className="text-[9px] text-zinc-600 mt-1">⚠ Founder / Admin role cannot be assigned via UI</p>
             </div>
             <div>
               <label className="block text-[10px] text-zinc-500 uppercase font-bold mb-1.5">Status</label>
@@ -540,13 +544,13 @@ const EmployeeManagement: React.FC = () => {
   const renderOverview = () => (
     <div className="space-y-8">
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <StatCard label="Active Staff" value={totalStats.active} icon={<Users size={18} />} color="text-emerald-400" sub={`${totalStats.onLeave} on leave`} />
-        <StatCard label="Today's Visits" value={totalStats.totalVisitsToday} icon={<MapPin size={18} />} color="text-blue-400" sub="Field activities" />
-        <StatCard label="Pending Claims" value={`₹${totalStats.pendingAmount.toLocaleString()}`} icon={<Wallet size={18} />} color="text-amber-400" sub={`${totalStats.pendingExpenses} awaiting approval`} />
-        <StatCard label="Avg Target Hit" value={`${totalStats.avgTargetAchievement}%`} icon={<Target size={18} />} color="text-purple-400" sub="This month" />
+        <StatCard label="Active Staff"   value={totalStats.active}           emoji="👥" color="oklch(0.55 0.19 167)" sub={`${totalStats.onLeave} on leave`} />
+        <StatCard label="Today's Visits" value={totalStats.totalVisitsToday}  emoji="📍" color="oklch(0.58 0.18 240)" sub="Field activities" />
+        <StatCard label="Pending Claims" value={`₹${totalStats.pendingAmount.toLocaleString()}`} emoji="💰" color="oklch(0.70 0.18 80)" sub={`${totalStats.pendingExpenses} awaiting approval`} />
+        <StatCard label="Avg Target Hit" value={`${totalStats.avgTargetAchievement}%`} emoji="🎯" color="oklch(0.60 0.20 295)" sub="This month" />
       </div>
 
-      <div className="glass-panel overflow-hidden">
+      <div className="aq-card overflow-hidden">
         <div className="p-5 border-b border-white/5 flex flex-wrap gap-4 items-center justify-between">
           <div className="flex items-center gap-3 flex-1 min-w-[200px]">
             <Search size={14} className="text-zinc-500" />
@@ -683,10 +687,10 @@ const EmployeeManagement: React.FC = () => {
   const renderVisits = () => (
     <div className="space-y-6">
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <StatCard label="Total Visits" value={visits.length} icon={<MapPin size={18} />} color="text-blue-400" />
-        <StatCard label="Completed" value={visits.filter(v => v.status === 'COMPLETED').length} icon={<CheckCircle size={18} />} color="text-emerald-400" />
-        <StatCard label="Today's Visits" value={visits.filter(v => v.date === '2026-04-18').length} icon={<Activity size={18} />} color="text-purple-400" />
-        <StatCard label="Pending" value={visits.filter(v => v.status === 'PENDING').length} icon={<Clock size={18} />} color="text-amber-400" />
+        <StatCard label="Total Visits" value={visits.length} emoji="📍" color="oklch(0.58 0.18 240)" />
+        <StatCard label="Completed" value={visits.filter(v => v.status === 'COMPLETED').length} emoji="✅" color="oklch(0.55 0.19 167)" />
+        <StatCard label="Today's Visits" value={visits.filter(v => v.date === '2026-04-18').length} emoji="📅" color="oklch(0.60 0.20 295)" />
+        <StatCard label="Pending" value={visits.filter(v => v.status === 'PENDING').length} emoji="⏳" color="oklch(0.70 0.18 80)" />
       </div>
 
       <div className="glass-panel overflow-hidden">
@@ -740,10 +744,10 @@ const EmployeeManagement: React.FC = () => {
   const renderAttendance = () => (
     <div className="space-y-6">
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <StatCard label="Present Today" value={attendance.filter(a => a.status === 'PRESENT').length} icon={<CheckCircle size={18} />} color="text-emerald-400" />
-        <StatCard label="Absent" value={attendance.filter(a => a.status === 'ABSENT').length} icon={<XCircle size={18} />} color="text-red-400" />
-        <StatCard label="Half Day" value={attendance.filter(a => a.status === 'HALF_DAY').length} icon={<Clock size={18} />} color="text-amber-400" />
-        <StatCard label="On Leave" value={attendance.filter(a => a.status === 'ON_LEAVE').length} icon={<Calendar size={18} />} color="text-purple-400" />
+        <StatCard label="Present Today" value={attendance.filter(a => a.status === 'PRESENT').length} emoji="?" color="oklch(0.55 0.19 167)" />
+        <StatCard label="Absent" value={attendance.filter(a => a.status === 'ABSENT').length} emoji="?" color="oklch(0.62 0.22 25)" />
+        <StatCard label="Half Day" value={attendance.filter(a => a.status === 'HALF_DAY').length} emoji="?" color="oklch(0.70 0.18 80)" />
+        <StatCard label="On Leave" value={attendance.filter(a => a.status === 'ON_LEAVE').length} emoji="??" color="oklch(0.60 0.20 295)" />
       </div>
 
       <div className="glass-panel overflow-hidden">
@@ -796,10 +800,10 @@ const EmployeeManagement: React.FC = () => {
   const renderTasks = () => (
     <div className="space-y-6">
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <StatCard label="Total Tasks" value={tasks.length} icon={<ClipboardList size={18} />} color="text-blue-400" />
-        <StatCard label="Completed" value={tasks.filter(t => t.status === 'COMPLETED').length} icon={<CheckCircle size={18} />} color="text-emerald-400" />
-        <StatCard label="In Progress" value={tasks.filter(t => t.status === 'IN_PROGRESS').length} icon={<Activity size={18} />} color="text-purple-400" />
-        <StatCard label="Overdue" value={tasks.filter(t => t.status === 'OVERDUE').length} icon={<AlertCircle size={18} />} color="text-red-400" />
+        <StatCard label="Total Tasks" value={tasks.length} emoji="??" color="oklch(0.58 0.18 240)" />
+        <StatCard label="Completed" value={tasks.filter(t => t.status === 'COMPLETED').length} emoji="?" color="oklch(0.55 0.19 167)" />
+        <StatCard label="In Progress" value={tasks.filter(t => t.status === 'IN_PROGRESS').length} emoji="?" color="oklch(0.60 0.20 295)" />
+        <StatCard label="Overdue" value={tasks.filter(t => t.status === 'OVERDUE').length} emoji="??" color="oklch(0.62 0.22 25)" />
       </div>
 
       <div className="glass-panel overflow-hidden">
@@ -862,10 +866,10 @@ const EmployeeManagement: React.FC = () => {
     return (
       <div className="space-y-6">
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          <StatCard label="Pending Review" value={pending.length} icon={<Clock size={18} />} color="text-amber-400" sub={`₹${pending.reduce((s, e) => s + e.amount, 0).toLocaleString()}`} />
-          <StatCard label="Approved (MTD)" value={approved.length} icon={<CheckCircle size={18} />} color="text-emerald-400" sub={`₹${approved.reduce((s, e) => s + e.amount, 0).toLocaleString()}`} />
-          <StatCard label="Rejected" value={rejected.length} icon={<XCircle size={18} />} color="text-red-400" />
-          <StatCard label="Total Claims" value={expenses.length} icon={<Receipt size={18} />} color="text-blue-400" />
+          <StatCard label="Pending Review" value={pending.length} emoji="⏳" color="oklch(0.70 0.18 80)" sub={`₹${pending.reduce((s, e) => s + e.amount, 0).toLocaleString()}`} />
+          <StatCard label="Approved (MTD)" value={approved.length} emoji="✅" color="oklch(0.55 0.19 167)" sub={`₹${approved.reduce((s, e) => s + e.amount, 0).toLocaleString()}`} />
+          <StatCard label="Rejected" value={rejected.length} emoji="❌" color="oklch(0.62 0.22 25)" />
+          <StatCard label="Total Claims" value={expenses.length} emoji="💰" color="oklch(0.58 0.18 240)" />
         </div>
 
         {pending.length > 0 && (
@@ -973,9 +977,9 @@ const EmployeeManagement: React.FC = () => {
   const renderTraining = () => (
     <div className="space-y-6">
       <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-        <StatCard label="Total Certifications" value={training.filter(t => t.certified).length} icon={<Award size={18} />} color="text-emerald-400" />
-        <StatCard label="Avg Score" value={`${Math.round(training.reduce((s, t) => s + t.score, 0) / training.length)}%`} icon={<Star size={18} />} color="text-amber-400" />
-        <StatCard label="Modules Completed" value={training.length} icon={<BookOpen size={18} />} color="text-blue-400" />
+        <StatCard label="Total Certifications" value={training.filter(t => t.certified).length} emoji="🏆" color="oklch(0.55 0.19 167)" />
+        <StatCard label="Avg Score" value={`${Math.round(training.reduce((s, t) => s + t.score, 0) / training.length)}%`} emoji="⭐" color="oklch(0.70 0.18 80)" />
+        <StatCard label="Modules Completed" value={training.length} emoji="📖" color="oklch(0.58 0.18 240)" />
       </div>
 
       <div className="space-y-4">
@@ -1102,59 +1106,74 @@ const EmployeeManagement: React.FC = () => {
   const renderTeams = () => (
     <div className="space-y-8">
       {/* Org headline */}
-      <div className="glass-panel p-6 border border-emerald-500/10 bg-gradient-to-r from-emerald-500/5 to-transparent">
-        <h2 className="text-xl font-display font-bold mb-1">AquaGrow Internal Team Structure</h2>
-        <p className="text-sm text-zinc-400">6 teams working end-to-end: Supplier → Admin → Inventory → Farmer Order → Packing → Shipping → Delivery → Support → Feedback</p>
+      <div className="aq-card aq-bg-green p-6" style={{ borderLeft: '4px solid oklch(0.55 0.19 167)' }}>
+        <h2 className="text-xl font-display font-bold mb-1" style={{ color: 'var(--aq-text-primary)' }}>AquaGrow Internal Team Structure</h2>
+        <p className="text-sm" style={{ color: 'var(--aq-text-muted)' }}>6 teams working end-to-end: Supplier → Admin → Inventory → Farmer Order → Packing → Shipping → Delivery → Support → Feedback</p>
         <div className="flex items-center gap-2 mt-4 overflow-x-auto pb-1 flex-wrap">
           {['🏭 Supplier', '→', '🧠 Operations', '→', '📦 Warehouse', '→', '🚚 Logistics', '→', '👨‍🌾 Farmer', '→', '📞 Support', '→', '📊 Growth'].map((s, i) => (
             s === '→'
-              ? <span key={i} className="text-zinc-600 font-bold shrink-0">→</span>
-              : <span key={i} className="text-xs font-bold px-3 py-1.5 rounded-xl bg-white/5 border border-white/10 text-zinc-300 shrink-0">{s}</span>
+              ? <span key={i} className="text-zinc-400 font-bold shrink-0">→</span>
+              : <span key={i} className="text-xs font-bold px-3 py-1.5 rounded-xl aq-card aq-bg-blue text-zinc-300 shrink-0">{s}</span>
           ))}
         </div>
       </div>
 
-      {/* Team summary stats */}
+      {/* Team summary stats — aq-kpi-card per team */}
       <div className="grid grid-cols-3 md:grid-cols-6 gap-3">
         {TEAM_CONFIG.map(team => (
-          <div key={team.id} className={`glass-panel p-4 text-center border ${team.border} bg-gradient-to-b ${team.gradient}`}>
-            <p className="text-2xl mb-1">{team.emoji}</p>
-            <p className={`text-2xl font-display font-bold ${team.accent}`}>{empsByTeam[team.id]?.length ?? 0}</p>
-            <p className="text-[9px] text-zinc-500 uppercase font-bold mt-0.5">{team.name}</p>
-          </div>
+          <motion.div key={team.id} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="aq-kpi-card">
+            <span className="aq-kpi-icon">{team.emoji}</span>
+            <span className="aq-kpi-number" style={{ color: 'var(--aq-text-primary)' }}>{empsByTeam[team.id]?.length ?? 0}</span>
+            <span className="aq-kpi-label">{team.name.split(' ')[0]}</span>
+          </motion.div>
         ))}
       </div>
 
-      {/* Per team cards */}
+      {/* Per team cards — colored left border per team */}
       <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
         {TEAM_CONFIG.map(team => {
           const teamEmps = empsByTeam[team.id] ?? [];
+          // Map team gradient colors to a solid left border color
+          const borderColors: Record<string, string> = {
+            operations: 'oklch(0.62 0.22 25)',
+            warehouse:  'oklch(0.70 0.18 80)',
+            logistics:  'oklch(0.55 0.17 187)',
+            support:    'oklch(0.55 0.19 167)',
+            tech:       'oklch(0.60 0.20 295)',
+            growth:     'oklch(0.58 0.18 240)',
+          };
+          const borderColor = borderColors[team.id] ?? 'oklch(0.55 0.19 167)';
           return (
-            <motion.div key={team.id} whileHover={{ y: -2 }} className={`glass-panel border ${team.border} bg-gradient-to-b ${team.gradient} flex flex-col`}>
+            <motion.div key={team.id} whileHover={{ y: -2, scale: 1.01 }}
+              className="aq-card flex flex-col overflow-hidden"
+              style={{ borderLeft: `4px solid ${borderColor}` }}>
               {/* Team header */}
-              <div className="p-5 border-b border-white/5">
+              <div className="p-5" style={{ borderBottom: '1px solid var(--aq-card-border)', background: `${borderColor}10` }}>
                 <div className="flex items-center justify-between mb-1">
                   <div className="flex items-center gap-2">
                     <span className="text-2xl">{team.emoji}</span>
                     <div>
-                      <h3 className="font-display font-bold text-base">{team.name}</h3>
-                      <p className="text-[10px] text-zinc-500">{team.subtitle}</p>
+                      <h3 className="font-display font-bold text-base" style={{ color: 'var(--aq-text-primary)' }}>{team.name}</h3>
+                      <p className="text-[10px]" style={{ color: 'var(--aq-text-muted)' }}>{team.subtitle}</p>
                     </div>
                   </div>
-                  <span className={`text-xs font-bold px-2.5 py-1 rounded-full bg-white/5 ${team.accent}`}>{teamEmps.length} staff</span>
+                  <span className="text-xs font-bold px-2.5 py-1 rounded-full"
+                    style={{ background: `${borderColor}18`, color: borderColor, border: `1px solid ${borderColor}35` }}>
+                    {teamEmps.length} staff
+                  </span>
                 </div>
               </div>
 
               {/* Members */}
               <div className="p-4 space-y-2">
-                <p className="text-[9px] text-zinc-600 uppercase font-bold mb-2">Team Members</p>
-                {teamEmps.length === 0 && <p className="text-xs text-zinc-600 italic">No staff assigned yet</p>}
+                <p className="aq-section-label">Team Members</p>
+                {teamEmps.length === 0 && <p className="text-xs italic" style={{ color: 'var(--aq-text-faint)' }}>No staff assigned yet</p>}
                 {teamEmps.map((emp, i) => (
                   <div key={emp.id} className="flex items-center gap-2.5">
                     <div className={`w-7 h-7 rounded-lg ${avatarColors[i % avatarColors.length]} flex items-center justify-center text-white text-[9px] font-bold shrink-0`}>{emp.avatar}</div>
                     <div className="flex-1 min-w-0">
-                      <p className="text-xs font-bold truncate">{emp.name}</p>
-                      <p className="text-[9px] text-zinc-500">{ROLE_META[emp.role].label}</p>
+                      <p className="text-xs font-bold truncate" style={{ color: 'var(--aq-text-primary)' }}>{emp.name}</p>
+                      <p className="text-[9px]" style={{ color: 'var(--aq-text-muted)' }}>{ROLE_META[emp.role].label}</p>
                     </div>
                     <span className={`text-[8px] font-bold px-1.5 py-0.5 rounded-full shrink-0 ${
                       emp.status === 'ACTIVE' ? 'bg-emerald-500/10 text-emerald-400' :
@@ -1166,12 +1185,13 @@ const EmployeeManagement: React.FC = () => {
 
               {/* Daily tasks */}
               <div className="px-4 pb-4 flex-1">
-                <p className="text-[9px] text-zinc-600 uppercase font-bold mb-2">Daily Responsibilities</p>
+                <p className="aq-section-label mb-2">Daily Responsibilities</p>
                 <ul className="space-y-1.5">
                   {team.dailyTasks.map((task, i) => (
                     <li key={i} className="flex items-start gap-2">
-                      <span className={`mt-0.5 w-3.5 h-3.5 rounded-full bg-white/5 flex items-center justify-center text-[7px] font-bold ${team.accent} shrink-0`}>{i + 1}</span>
-                      <span className="text-[10px] text-zinc-400 leading-snug">{task}</span>
+                      <span className="mt-0.5 w-3.5 h-3.5 rounded-full flex items-center justify-center text-[7px] font-bold shrink-0"
+                        style={{ background: `${borderColor}18`, color: borderColor }}>{i + 1}</span>
+                      <span className="text-[10px] leading-snug" style={{ color: 'var(--aq-text-muted)' }}>{task}</span>
                     </li>
                   ))}
                 </ul>
@@ -1179,10 +1199,11 @@ const EmployeeManagement: React.FC = () => {
 
               {/* KPIs */}
               <div className="px-4 pb-5">
-                <p className="text-[9px] text-zinc-600 uppercase font-bold mb-2">KPIs Tracked</p>
+                <p className="aq-section-label mb-2">KPIs Tracked</p>
                 <div className="flex flex-wrap gap-1">
                   {team.kpis.map(kpi => (
-                    <span key={kpi} className={`text-[9px] font-bold px-2 py-0.5 rounded-full bg-white/5 border border-white/10 ${team.accent}`}>{kpi}</span>
+                    <span key={kpi} className="text-[9px] font-bold px-2 py-0.5 rounded-full"
+                      style={{ background: `${borderColor}14`, color: borderColor, border: `1px solid ${borderColor}30` }}>{kpi}</span>
                   ))}
                 </div>
               </div>
