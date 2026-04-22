@@ -1,8 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { useAuth } from '../context/AuthContext';
-import { useHiring } from '../context/HiringContext';
-import type { Candidate as HiringCandidate } from './HiringPipeline';
 import {
   CalendarDays, CheckCircle, XCircle, Clock, Search,
   X, Users, Star, ChevronRight,
@@ -28,7 +26,6 @@ const TYPE_COLORS: Record<string, string> = {
 // ══════════════════════════════════════════════════════════════════════════════
 const AllApprovals: React.FC = () => {
   const { employee, hasPermission, hasRole } = useAuth();
-  const { candidates, updateCandidate } = useHiring();
   const isFounder = hasRole('super_admin');
 
   // Active top tab
@@ -46,6 +43,15 @@ const AllApprovals: React.FC = () => {
   const [fetching, setFetching]   = useState(true);
   const canApproveLeave = hasPermission('approve_leaves');
 
+  // ── HIRING state (fetched directly from API — not in-memory context) ────
+  const [apiCandidates, setApiCandidates] = useState<any[]>([]);
+  const [hiringFetching, setHiringFetching] = useState(false);
+  const [selectedCand, setSelectedCand]   = useState<any | null>(null);
+  const [hiringNote, setHiringNote]       = useState('');
+  const [hiringProcessing, setHiringProcessing] = useState(false);
+
+  const pendingFounder = apiCandidates.filter(c => c.hiringStatus === 'hr_approved');
+
   const fetchLeaves = useCallback(async () => {
     setFetching(true);
     try {
@@ -56,7 +62,22 @@ const AllApprovals: React.FC = () => {
     } finally { setFetching(false); }
   }, []);
 
+  const fetchHiringCandidates = useCallback(async () => {
+    if (!isFounder) return;
+    setHiringFetching(true);
+    try {
+      const data = await hrmsApi.candidates.list();
+      setApiCandidates(data.map((c: any) => ({ ...c, id: c._id ?? c.id })));
+    } catch { /* silently fail */ }
+    finally { setHiringFetching(false); }
+  }, [isFounder]);
+
   useEffect(() => { fetchLeaves(); }, [fetchLeaves]);
+  useEffect(() => {
+    fetchHiringCandidates();
+    const iv = setInterval(fetchHiringCandidates, 30_000);
+    return () => clearInterval(iv);
+  }, [fetchHiringCandidates]);
 
   const handleLeaveDecision = async (leaveId: string, decision: 'approved' | 'rejected') => {
     setProcessing(true);
@@ -68,6 +89,20 @@ const AllApprovals: React.FC = () => {
       await fetchLeaves();
     } catch (err: any) { toast.error(err.message ?? 'Failed to update leave'); }
     finally { setProcessing(false); }
+  };
+
+  const handleHiringDecision = async (cand: any, decision: 'founder_approved' | 'rejected') => {
+    setHiringProcessing(true);
+    try {
+      await hrmsApi.candidates.update(cand.id, { hiringStatus: decision });
+      toast.success(decision === 'founder_approved'
+        ? `✅ ${cand.name} approved — proceeding to BGV`
+        : `❌ ${cand.name} rejected`);
+      setSelectedCand(null); setHiringNote('');
+      await fetchHiringCandidates();
+    } catch (err: any) {
+      toast.error(err.message ?? 'Failed to update');
+    } finally { setHiringProcessing(false); }
   };
 
   const filteredLeaves = leaves.filter(l => {
@@ -281,9 +316,9 @@ const AllApprovals: React.FC = () => {
             {/* Stats */}
             <div className="grid grid-cols-3 gap-3">
               {[
-                { label: 'Pending Approval', value: pendingFounder.length,                                            color: 'oklch(0.78 0.17 70)'  },
-                { label: 'Approved',          value: candidates.filter(c => c.status === 'founder_approved').length,  color: 'oklch(0.72 0.19 167)' },
-                { label: 'Rejected',          value: candidates.filter(c => c.status === 'rejected').length,          color: 'oklch(0.75 0.18 25)'  },
+                { label: 'Pending Approval', value: pendingFounder.length,                                                color: 'oklch(0.78 0.17 70)'  },
+                { label: 'Approved',          value: apiCandidates.filter(c => c.hiringStatus === 'founder_approved').length, color: 'oklch(0.72 0.19 167)' },
+                { label: 'Rejected',          value: apiCandidates.filter(c => c.hiringStatus === 'rejected').length,         color: 'oklch(0.75 0.18 25)'  },
               ].map(s => (
                 <div key={s.label} className="aq-stat-card">
                   <p className="text-[9px] uppercase tracking-widest font-bold mb-2" style={{ color: 'var(--aq-text-muted)' }}>{s.label}</p>

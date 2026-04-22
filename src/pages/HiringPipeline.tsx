@@ -845,14 +845,22 @@ const HiringPipeline: React.FC = () => {
   }), [candidates]);
 
   const handleAdd = (c: Candidate) => addCandidate(c);
-  const handleStatusUpdate = (id: string, status: HiringStatus, extras: Partial<Candidate> = {}) => {
+  const handleStatusUpdate = async (id: string, status: HiringStatus, extras: Partial<Candidate> = {}) => {
     // Stamp today's date when hiring is confirmed
     const finalExtras = status === 'hired'
       ? { ...extras, hiredAt: new Date().toISOString().slice(0, 10) }
       : extras;
 
+    // Update local context immediately (optimistic)
     updateCandidate(id, status, finalExtras);
     setSelected(p => p?.id === id ? { ...p!, status, ...finalExtras } : p);
+
+    // Persist hiringStatus to MongoDB so it survives refreshes / cross-session
+    try {
+      await hrmsApi.candidates.update(id, { hiringStatus: status });
+    } catch {
+      // Non-fatal — context is already updated; silently fail
+    }
 
     // Notify on key milestones
     if (status === 'hired') {
