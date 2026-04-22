@@ -370,11 +370,12 @@ const CandidatePanel = ({
     setActing(true);
     await new Promise(r => setTimeout(r, 700));
     onStatusUpdate(candidate.id, status, extras);
-    toast.success(`${STATUS_CONFIG[status].emoji} ${STATUS_CONFIG[status].label}`);
+    toast.success(`${STATUS_CONFIG[status].emoji} Moved to ${STATUS_CONFIG[status].label}`);
     setActing(false);
     setShowReject(false);
     setNote('');
     setRejectReason('');
+    onClose(); // Close panel so kanban updates are visible immediately
   };
 
   const { status } = candidate;
@@ -756,9 +757,28 @@ const HiringPipeline: React.FC = () => {
     try {
       const apiCandidates: any[] = await hrmsApi.candidates.list();
       apiCandidates.forEach((apiC) => {
-        if (apiC.onboardingStatus !== 'submitted') return;
-        const local = candidates.find(c => c.id === (apiC._id ?? apiC.id));
-        if (!local || local.status !== 'invited') return; // only promote 'invited' ones
+        const candidateId = apiC._id ?? apiC.id;
+        const local = candidates.find(c => c.id === candidateId);
+        if (!local) return;
+
+        const apiHiringStatus: HiringStatus = apiC.hiringStatus ?? 'invited';
+        const apiOnboardingStatus = apiC.onboardingStatus;
+
+        // ── Sync hiringStatus: if DB is ahead of local context, promote ──────
+        // This covers: HR Approve, Founder Approve, BGV, Hire (persisted to DB)
+        const STATUS_ORDER: HiringStatus[] = ['invited','submitted','hr_approved','founder_approved','bgv_clear','hired','rejected'];
+        const localIdx = STATUS_ORDER.indexOf(local.status);
+        const apiIdx   = STATUS_ORDER.indexOf(apiHiringStatus);
+
+        if (apiIdx > localIdx && apiHiringStatus !== 'invited') {
+          // DB stage is ahead — sync it without overwriting onboarding details
+          updateCandidate(local.id, apiHiringStatus, {});
+          return; // Don't also run onboarding sync below for this candidate
+        }
+
+        // ── Sync onboarding submission: invited → submitted with details ─────
+        if (apiOnboardingStatus !== 'submitted') return;
+        if (local.status !== 'invited') return; // already promoted above or manually
 
         const od = apiC.onboardingData ?? {};
         const p  = od.personal ?? {};
@@ -767,7 +787,6 @@ const HiringPipeline: React.FC = () => {
         const bk = od.bank     ?? {};
         const dc = od.docs     ?? {};
 
-        // Map onboardingData → CandidateDetails
         const details: Partial<Candidate['details']> = {
           dob:             p.dob            ?? '',
           gender:          p.gender         ?? '',
@@ -788,29 +807,24 @@ const HiringPipeline: React.FC = () => {
           accountHolder:   bk.holder        ?? '',
         };
 
-        // Map onboardingData.docs → CandidateDoc[]
         const docTypes: { key: keyof typeof dc; type: 'aadhaar' | 'pan' | 'resume' | 'photo' | 'other'; name: string }[] = [
-          { key: 'aadhaar',    type: 'aadhaar', name: 'Aadhaar Card'        },
-          { key: 'pan',        type: 'pan',     name: 'PAN Card'            },
-          { key: 'resume',     type: 'resume',  name: 'Resume / CV'         },
-          { key: 'photo',      type: 'photo',   name: 'Passport Photo'      },
-          { key: 'degree',     type: 'other',   name: 'Degree Certificate'  },
-          { key: 'experience', type: 'other',   name: 'Experience Letter'   },
+          { key: 'aadhaar',    type: 'aadhaar', name: 'Aadhaar Card'       },
+          { key: 'pan',        type: 'pan',     name: 'PAN Card'           },
+          { key: 'resume',     type: 'resume',  name: 'Resume / CV'        },
+          { key: 'photo',      type: 'photo',   name: 'Passport Photo'     },
+          { key: 'degree',     type: 'other',   name: 'Degree Certificate' },
+          { key: 'experience', type: 'other',   name: 'Experience Letter'  },
         ];
         const documents = docTypes
           .filter(d => !!dc[d.key])
           .map(d => ({
-            name: d.name,
-            url:  dc[d.key] as string,
-            type: d.type,
+            name: d.name, url: dc[d.key] as string, type: d.type,
             uploadedAt: od.submittedAt ? od.submittedAt.slice(0, 10) : new Date().toISOString().slice(0, 10),
           }));
 
         updateCandidate(local.id, 'submitted', {
-          details,
-          documents,
+          details, documents,
           submittedAt: od.submittedAt ? od.submittedAt.slice(0, 10) : new Date().toISOString().slice(0, 10),
-          // Populate contact fields if still empty
           phone: local.phone || ct.phone || '',
           email: local.email || ct.personalEmail || '',
         });
@@ -819,6 +833,7 @@ const HiringPipeline: React.FC = () => {
       // Silently fail — pipeline still works with local state
     }
   }, [candidates, updateCandidate]);
+
 
   // Run on mount and every 30 seconds
   useEffect(() => {
