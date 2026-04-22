@@ -7,7 +7,7 @@ import {
   Ticket, FileText, BarChart3, Package, ShieldCheck,
   ClipboardList, TrendingUp, Building2, UserPlus, Sun, Moon,
   PanelLeftClose, PanelLeftOpen, ChevronDown, Zap, Home,
-  CheckSquare, DollarSign, GitBranch, Briefcase,
+  CheckSquare, DollarSign, GitBranch, Briefcase, CheckCircle,
 } from 'lucide-react';
 
 interface LayoutProps {
@@ -65,7 +65,7 @@ const ALL_NAV_GROUPS: { group: string; items: NavItem[] }[] = [
       { id: 'recruitment',      label: 'Recruitment',    sub: 'Job posts & pipeline',   icon: UserPlus,     roles: ['super_admin','hr_manager'], isNew: true },
       { id: 'hiring-pipeline',  label: 'Hiring Pipeline',sub: 'Invite → BGV → Hire',    icon: Users,        roles: ['super_admin','hr_manager'], isNew: true },
       { id: 'employees',        label: 'Employees',      sub: 'Team directory',         icon: Users,        roles: ['super_admin','hr_manager'] },
-      { id: 'leave-admin',   label: 'Leave Approvals',sub: 'Approve requests',       icon: CalendarDays, roles: ['super_admin','hr_manager','operations_manager'] },
+      { id: 'leave-admin', label: 'All Approvals', sub: 'Leaves · Hiring · All decisions', icon: CheckCircle, roles: ['super_admin','hr_manager','operations_manager'] },
       { id: 'att-admin',     label: 'Timesheet Admin',sub: 'Full team records',      icon: Clock,        roles: ['super_admin','hr_manager','operations_manager'] },
       { id: 'performance',   label: 'Performance',    sub: 'Reviews & ratings',      icon: TrendingUp,   roles: ['super_admin','hr_manager','operations_manager'] },
       { id: 'documents',     label: 'Documents',      sub: 'Vault & verification',   icon: FileText,     roles: ['super_admin','hr_manager'] },
