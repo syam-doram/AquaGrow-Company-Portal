@@ -1,5 +1,6 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
+import hrmsApi from '../api';
 import {
   UserPlus, Search, X, CheckCircle, XCircle, Clock,
   Mail, ChevronRight, Eye, Download, Copy, Users,
@@ -746,6 +747,86 @@ const HiringPipeline: React.FC = () => {
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState<HiringStatus | 'all'>('all');
   const [view, setView] = useState<'pipeline' | 'list'>('pipeline');
+
+  // ── Sync onboarding submissions from MongoDB → HiringContext ─────────────
+  // Runs on mount and every 30s. When a candidate has submitted their
+  // self-onboarding form (onboardingStatus === 'submitted') but is still
+  // 'invited' in the local context, we promote them and populate their details.
+  const syncFromBackend = useCallback(async () => {
+    try {
+      const apiCandidates: any[] = await hrmsApi.candidates.list();
+      apiCandidates.forEach((apiC) => {
+        if (apiC.onboardingStatus !== 'submitted') return;
+        const local = candidates.find(c => c.id === (apiC._id ?? apiC.id));
+        if (!local || local.status !== 'invited') return; // only promote 'invited' ones
+
+        const od = apiC.onboardingData ?? {};
+        const p  = od.personal ?? {};
+        const ct = od.contact  ?? {};
+        const pr = od.prof     ?? {};
+        const bk = od.bank     ?? {};
+        const dc = od.docs     ?? {};
+
+        // Map onboardingData → CandidateDetails
+        const details: Partial<Candidate['details']> = {
+          dob:             p.dob            ?? '',
+          gender:          p.gender         ?? '',
+          address:         `${p.address ?? ''}, ${p.city ?? ''}, ${p.state ?? ''}`.replace(/^, |, $/g, ''),
+          city:            p.city           ?? '',
+          state:           p.state          ?? '',
+          pincode:         p.pincode        ?? '',
+          alternatePhone:  ct.altPhone      ?? '',
+          previousCompany: pr.prevCompany   ?? '',
+          experience:      pr.experience    ?? '',
+          skills:          pr.skills        ?? '',
+          currentCTC:      pr.currentCTC    ?? '',
+          expectedCTC:     pr.expectedCTC   ?? '',
+          noticePeriod:    pr.noticePeriod  ?? '',
+          bankAccount:     bk.accountNo     ?? '',
+          ifsc:            bk.ifsc          ?? '',
+          bankName:        bk.bankName      ?? '',
+          accountHolder:   bk.holder        ?? '',
+        };
+
+        // Map onboardingData.docs → CandidateDoc[]
+        const docTypes: { key: keyof typeof dc; type: 'aadhaar' | 'pan' | 'resume' | 'photo' | 'other'; name: string }[] = [
+          { key: 'aadhaar',    type: 'aadhaar', name: 'Aadhaar Card'        },
+          { key: 'pan',        type: 'pan',     name: 'PAN Card'            },
+          { key: 'resume',     type: 'resume',  name: 'Resume / CV'         },
+          { key: 'photo',      type: 'photo',   name: 'Passport Photo'      },
+          { key: 'degree',     type: 'other',   name: 'Degree Certificate'  },
+          { key: 'experience', type: 'other',   name: 'Experience Letter'   },
+        ];
+        const documents = docTypes
+          .filter(d => !!dc[d.key])
+          .map(d => ({
+            name: d.name,
+            url:  dc[d.key] as string,
+            type: d.type,
+            uploadedAt: od.submittedAt ? od.submittedAt.slice(0, 10) : new Date().toISOString().slice(0, 10),
+          }));
+
+        updateCandidate(local.id, 'submitted', {
+          details,
+          documents,
+          submittedAt: od.submittedAt ? od.submittedAt.slice(0, 10) : new Date().toISOString().slice(0, 10),
+          // Populate contact fields if still empty
+          phone: local.phone || ct.phone || '',
+          email: local.email || ct.personalEmail || '',
+        });
+      });
+    } catch {
+      // Silently fail — pipeline still works with local state
+    }
+  }, [candidates, updateCandidate]);
+
+  // Run on mount and every 30 seconds
+  useEffect(() => {
+    syncFromBackend();
+    const interval = setInterval(syncFromBackend, 30_000);
+    return () => clearInterval(interval);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const filtered = useMemo(() => candidates.filter(c => {
     const ms = search === '' || c.name.toLowerCase().includes(search.toLowerCase())
