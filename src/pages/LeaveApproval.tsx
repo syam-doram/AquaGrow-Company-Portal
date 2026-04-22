@@ -117,22 +117,9 @@ const AllApprovals: React.FC = () => {
   const leaveRejected = leaves.filter(l => l.status === 'rejected').length;
   const days = (l: LeaveRecord) => Math.max(1, differenceInCalendarDays(new Date(l.to), new Date(l.from)) + 1);
 
-  // ── HIRING PIPELINE — Founder Approvals ────────────────────────────────────
-  // Candidates awaiting Founder sign-off (status === 'hr_approved')
-  const pendingFounder = candidates.filter(c => c.status === 'hr_approved');
-  const [selectedCand, setSelectedCand] = useState<HiringCandidate | null>(null);
-  const [hiringNote, setHiringNote]     = useState('');
-
-  const handleHiringDecision = (cand: HiringCandidate, decision: 'founder_approved' | 'rejected') => {
-    updateCandidate(cand.id, decision, { founderNote: hiringNote || undefined });
-    toast.success(decision === 'founder_approved'
-      ? `✅ ${cand.name} approved — proceeding to BGV`
-      : `❌ ${cand.name} rejected`);
-    setSelectedCand(null); setHiringNote('');
-  };
-
   // ── Total pending badge ────────────────────────────────────────────────────
   const totalPending = leavePending + (isFounder ? pendingFounder.length : 0);
+
 
   return (
     <div className="space-y-5" style={{ color: 'var(--aq-text-primary)' }}>
