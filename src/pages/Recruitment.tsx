@@ -332,15 +332,15 @@ const Recruitment: React.FC = () => {
 
   // ── Render ────────────────────────────────────────────────────────────────────
   return (
-    <div className="space-y-5">
+    <div className="space-y-5" style={{ color: 'var(--aq-text-primary)' }}>
 
       {/* ── Header ──────────────────────────────────────────────────────────────── */}
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
         <div>
-          <h1 className="text-xl font-bold text-white" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
+          <h1 className="text-xl font-bold" style={{ fontFamily: 'Space Grotesk, sans-serif', color: 'var(--aq-text-primary)' }}>
             Recruitment Pipeline
           </h1>
-          <p className="text-xs mt-0.5" style={{ color: 'oklch(0.5 0.02 210)' }}>
+          <p className="text-xs mt-0.5" style={{ color: 'var(--aq-text-muted)' }}>
             End-to-end hiring · {jobs.filter(j => j.status === 'open').length} open positions · {candidates.filter(c => c.status !== 'rejected').length} active candidates
           </p>
         </div>
@@ -387,16 +387,18 @@ const Recruitment: React.FC = () => {
           { label: 'Rejected',    value: candidates.filter(c => c.status === 'rejected').length,   icon: XCircle,    color: 'oklch(0.62 0.22 25)'  },
         ].map((k, i) => (
           <motion.div key={k.label} initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: i * 0.05 }} className="aq-kpi-card">
-            <span className="aq-kpi-icon" style={{ color: k.color }}><k.icon size={22} strokeWidth={2} /></span>
-            <span className="aq-kpi-number" style={{ color: k.color }}>{k.value}</span>
-            <span className="aq-kpi-label">{k.label}</span>
+            transition={{ delay: i * 0.05 }}
+            className="flex flex-col items-center gap-1 p-4 rounded-2xl text-center transition-all hover:-translate-y-0.5"
+            style={{ background: 'var(--card)', border: '1px solid var(--aq-glass-border)', boxShadow: '0 2px 12px oklch(0 0 0 / 6%)' }}>
+            <span style={{ color: k.color }}><k.icon size={22} strokeWidth={2} /></span>
+            <span className="text-2xl font-black" style={{ color: k.color }}>{k.value}</span>
+            <span className="text-[9px] uppercase tracking-widest font-semibold" style={{ color: 'var(--aq-text-muted)' }}>{k.label}</span>
           </motion.div>
         ))}
       </div>
 
       {/* ── Tabs ─────────────────────────────────────────────────────────────── */}
-      <div className="flex gap-1 p-1 rounded-xl" style={{ background: 'oklch(1 0 0 / 4%)', border: '1px solid oklch(1 0 0 / 8%)' }}>
+      <div className="flex gap-1 p-1 rounded-xl" style={{ background: 'var(--aq-stat-bg)', border: '1px solid var(--aq-glass-border)' }}>
         {[
           { id: 'pipeline', label: '⚡ Pipeline', count: candidates.filter(c => c.status !== 'rejected').length },
           { id: 'jobs',     label: '📋 Job Postings', count: jobs.length },
@@ -405,11 +407,11 @@ const Recruitment: React.FC = () => {
           <button key={t.id} onClick={() => setActiveTab(t.id as any)}
             className="flex-1 py-2 px-3 rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-1.5"
             style={activeTab === t.id
-              ? { background: 'oklch(0.72 0.19 167 / 0.15)', color: 'oklch(0.72 0.19 167)', border: '1px solid oklch(0.72 0.19 167 / 0.3)' }
-              : { color: 'oklch(0.55 0.02 210)', border: '1px solid transparent' }}>
+              ? { background: 'oklch(0.60 0.17 167 / 0.12)', color: 'var(--primary)', border: '1px solid oklch(0.60 0.17 167 / 0.3)' }
+              : { color: 'var(--aq-text-muted)', border: '1px solid transparent' }}>
             {t.label}
             <span className="text-[9px] px-1.5 py-0.5 rounded-full"
-              style={{ background: activeTab === t.id ? 'oklch(0.72 0.19 167 / 0.2)' : 'oklch(1 0 0 / 6%)' }}>
+              style={{ background: activeTab === t.id ? 'oklch(0.60 0.17 167 / 0.15)' : 'var(--aq-ghost-bg)' }}>
               {t.count}
             </span>
           </button>
@@ -469,7 +471,7 @@ const Recruitment: React.FC = () => {
               const StageIcon = stage.icon;
               return (
                 <div key={stage.status} className="rounded-2xl overflow-hidden"
-                  style={{ background: 'oklch(1 0 0 / 3%)', border: '1px solid oklch(1 0 0 / 8%)' }}>
+                  style={{ background: 'var(--card)', border: '1px solid var(--aq-glass-border)', boxShadow: '0 2px 16px oklch(0 0 0 / 5%)' }}>
 
                   {/* Column header */}
                   <div className="px-3 py-2.5 flex items-center gap-2"
@@ -499,8 +501,8 @@ const Recruitment: React.FC = () => {
                             animate={{ opacity: 1, scale: 1, y: 0 }}
                             exit={{ opacity: 0, scale: 0.94, y: -8 }}
                             layout
-                            className="rounded-xl cursor-pointer transition-shadow hover:shadow-lg group"
-                            style={{ background: 'oklch(1 0 0 / 5%)', border: '1px solid oklch(1 0 0 / 10%)' }}
+                            className="rounded-xl cursor-pointer transition-all hover:shadow-md hover:-translate-y-0.5 group"
+                            style={{ background: 'var(--aq-stat-bg)', border: '1px solid var(--aq-glass-border)', boxShadow: '0 1px 6px oklch(0 0 0 / 5%)' }}
                             onClick={() => setSelectedCand(cand)}>
 
                             <div className="p-2.5">
@@ -511,15 +513,15 @@ const Recruitment: React.FC = () => {
                                   {cand.name.charAt(0).toUpperCase()}
                                 </div>
                                 <div className="min-w-0">
-                                  <p className="text-[10px] font-bold text-white truncate">{cand.name}</p>
-                                  <p className="text-[8px] truncate" style={{ color: 'oklch(0.5 0.02 210)' }}>{cand.jobRole || '—'}</p>
+                                  <p className="text-[10px] font-bold truncate" style={{ color: 'var(--aq-text-primary)' }}>{cand.name}</p>
+                                  <p className="text-[8px] truncate" style={{ color: 'var(--aq-text-muted)' }}>{cand.jobRole || '—'}</p>
                                 </div>
                               </div>
 
                               {/* Source badge */}
                               <div className="flex items-center justify-between">
                                 <span className="text-[8px] px-1.5 py-0.5 rounded-md font-bold"
-                                  style={{ background: 'oklch(1 0 0 / 6%)', color: 'oklch(0.55 0.02 210)' }}>
+                                  style={{ background: 'var(--aq-ghost-bg)', color: 'var(--aq-text-muted)' }}>
                                   {cand.source}
                                 </span>
                                 {cand.offeredSalary && (
@@ -563,8 +565,8 @@ const Recruitment: React.FC = () => {
 
                     {stageCands.length === 0 && !fetching && (
                       <div className="py-6 flex flex-col items-center gap-1.5">
-                        <StageIcon size={20} style={{ color: 'oklch(0.28 0.02 210)' }} />
-                        <p className="text-[9px] text-center" style={{ color: 'oklch(0.38 0.02 210)' }}>No candidates</p>
+                        <StageIcon size={20} style={{ color: 'var(--aq-text-faint)' }} />
+                        <p className="text-[9px] text-center" style={{ color: 'var(--aq-text-faint)' }}>No candidates</p>
                       </div>
                     )}
                   </div>
@@ -625,12 +627,12 @@ const Recruitment: React.FC = () => {
                       </div>
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2 flex-wrap">
-                          <p className="text-sm font-bold text-white">{job.role}</p>
+                          <p className="text-sm font-bold" style={{ color: 'var(--aq-text-primary)' }}>{job.role}</p>
                           <span className={`aq-badge ${job.status === 'open' ? 'aq-badge-green' : job.status === 'paused' ? 'aq-badge-amber' : 'aq-badge-red'}`}>
                             {job.status}
                           </span>
                         </div>
-                        <div className="flex flex-wrap gap-3 text-[10px] mt-0.5" style={{ color: 'oklch(0.55 0.02 210)' }}>
+                        <div className="flex flex-wrap gap-3 text-[10px] mt-0.5" style={{ color: 'var(--aq-text-secondary)' }}>
                           <span className="flex items-center gap-1"><Building2 size={9} /> {job.department}</span>
                           <span className="flex items-center gap-1"><MapPin size={9} /> {job.location}</span>
                           <span className="flex items-center gap-1"><DollarSign size={9} /> ₹{job.salaryMin.toLocaleString()}–₹{job.salaryMax.toLocaleString()}</span>
@@ -693,9 +695,9 @@ const Recruitment: React.FC = () => {
         <div className="space-y-3">
           {candidates.filter(c => c.status === 'offered' || c.offerStatus).length === 0 && (
             <div className="glass-panel py-16 text-center">
-              <Send size={36} className="mx-auto mb-3" style={{ color: 'oklch(0.3 0.02 210)' }} />
-              <p className="text-sm font-bold text-white mb-1">No offers sent yet</p>
-              <p className="text-xs" style={{ color: 'oklch(0.45 0.02 210)' }}>Select a candidate and send offer from the pipeline</p>
+              <Send size={36} className="mx-auto mb-3" style={{ color: 'var(--aq-text-faint)' }} />
+              <p className="text-sm font-bold mb-1" style={{ color: 'var(--aq-text-primary)' }}>No offers sent yet</p>
+              <p className="text-xs" style={{ color: 'var(--aq-text-muted)' }}>Select a candidate and send offer from the pipeline</p>
             </div>
           )}
 
@@ -705,7 +707,7 @@ const Recruitment: React.FC = () => {
               <Avatar name={cand.name} size={11} />
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2 mb-0.5">
-                  <p className="font-bold text-white">{cand.name}</p>
+                  <p className="font-bold" style={{ color: 'var(--aq-text-primary)' }}>{cand.name}</p>
                   <span className={`aq-badge ${
                     cand.offerStatus === 'accepted' ? 'aq-badge-green' :
                     cand.offerStatus === 'declined' ? 'aq-badge-red' : 'aq-badge-amber'
@@ -789,7 +791,7 @@ const Recruitment: React.FC = () => {
               onClick={e => e.stopPropagation()}>
 
               {/* Header strip */}
-              <div className="p-5" style={{ background: stageCfg(selectedCand.status).bg, borderBottom: '1px solid oklch(1 0 0 / 8%)' }}>
+              <div className="p-5" style={{ background: stageCfg(selectedCand.status).bg, borderBottom: '1px solid var(--aq-glass-border)' }}>
                 <div className="flex items-start justify-between mb-3">
                   <div className="flex items-center gap-3">
                     <div className="w-12 h-12 rounded-xl flex items-center justify-center font-black text-lg shrink-0 text-white"
@@ -859,25 +861,26 @@ const Recruitment: React.FC = () => {
                 {/* Offer details (if any) */}
                 {selectedCand.offeredSalary && (
                   <div className="p-3.5 rounded-xl mb-5"
-                    style={{ background: 'oklch(0.72 0.19 167 / 0.08)', border: '1px solid oklch(0.72 0.19 167 / 0.2)' }}>
-                    <p className="text-[9px] uppercase tracking-widest font-bold mb-2" style={{ color: 'oklch(0.72 0.19 167)' }}>Offer Details</p>
+                    style={{ background: 'oklch(0.60 0.17 167 / 0.08)', border: '1px solid oklch(0.60 0.17 167 / 0.2)' }}>
+                    <p className="text-[9px] uppercase tracking-widest font-bold mb-2" style={{ color: 'var(--primary)' }}>Offer Details</p>
                     <div className="space-y-1">
                       <div className="flex justify-between text-xs">
-                        <span style={{ color: 'oklch(0.55 0.02 210)' }}>Offered CTC</span>
-                        <span className="font-bold text-white">₹{selectedCand.offeredSalary.toLocaleString()}/mo</span>
+                        <span style={{ color: 'var(--aq-text-muted)' }}>Offered CTC</span>
+                        <span className="font-bold" style={{ color: 'var(--aq-text-primary)' }}>₹{selectedCand.offeredSalary.toLocaleString()}/mo</span>
                       </div>
                       {selectedCand.joiningDate && (
                         <div className="flex justify-between text-xs">
-                          <span style={{ color: 'oklch(0.55 0.02 210)' }}>Joining Date</span>
-                          <span className="font-bold text-white">{safeDate(selectedCand.joiningDate)}</span>
+                          <span style={{ color: 'var(--aq-text-muted)' }}>Joining Date</span>
+                          <span className="font-bold" style={{ color: 'var(--aq-text-primary)' }}>{safeDate(selectedCand.joiningDate)}</span>
                         </div>
                       )}
                       {selectedCand.offerStatus && (
                         <div className="flex justify-between text-xs">
-                          <span style={{ color: 'oklch(0.55 0.02 210)' }}>Status</span>
-                          <span className={`font-bold ${selectedCand.offerStatus === 'accepted' ? 'text-[oklch(0.72_0.19_167)]' : selectedCand.offerStatus === 'declined' ? 'text-[oklch(0.75_0.18_25)]' : 'text-[oklch(0.78_0.17_70)]'}`}>
-                            {selectedCand.offerStatus.toUpperCase()}
-                          </span>
+                          <span style={{ color: 'var(--aq-text-muted)' }}>Status</span>
+                          <span className={`font-bold ${
+                            selectedCand.offerStatus === 'accepted' ? 'text-[oklch(0.55_0.19_167)]' :
+                            selectedCand.offerStatus === 'declined'  ? 'text-[oklch(0.62_0.22_25)]'  : 'text-[oklch(0.70_0.18_80)]'
+                          }`}>{selectedCand.offerStatus.toUpperCase()}</span>
                         </div>
                       )}
                     </div>
@@ -1129,8 +1132,8 @@ const Recruitment: React.FC = () => {
                     <Send size={15} style={{ color: 'oklch(0.8 0.17 155)' }} />
                   </div>
                   <div>
-                    <h3 className="text-base font-bold text-white" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>Send Offer</h3>
-                    <p className="text-[10px]" style={{ color: 'oklch(0.5 0.02 210)' }}>To: {selectedCand.name}</p>
+                    <h3 className="text-base font-bold" style={{ fontFamily: 'Space Grotesk, sans-serif', color: 'var(--aq-text-primary)' }}>Send Offer Letter</h3>
+                    <p className="text-[10px]" style={{ color: 'var(--aq-text-muted)' }}>To: {selectedCand.name}</p>
                   </div>
                 </div>
                 <button onClick={() => setShowOfferModal(false)} className="p-1.5 rounded-xl hover:bg-white/5" style={{ color: 'oklch(0.5 0.02 210)' }}>
@@ -1152,24 +1155,24 @@ const Recruitment: React.FC = () => {
                     className="aq-input text-sm" />
                 </div>
                 {/* Preview */}
-                <div className="p-3.5 rounded-xl" style={{ background: 'oklch(0.72 0.19 167 / 0.08)', border: '1px solid oklch(0.72 0.19 167 / 0.2)' }}>
-                  <p className="text-[9px] font-bold mb-2" style={{ color: 'oklch(0.72 0.19 167)' }}>📄 Offer Letter Preview</p>
-                  <div className="space-y-1 text-[10px]">
+                <div className="p-3.5 rounded-xl" style={{ background: 'oklch(0.60 0.17 167 / 0.07)', border: '1px solid oklch(0.60 0.17 167 / 0.18)' }}>
+                  <p className="text-[9px] font-bold mb-2" style={{ color: 'var(--primary)' }}>📄 Offer Letter Preview</p>
+                  <div className="space-y-1.5 text-[10px]">
                     <div className="flex justify-between">
-                      <span style={{ color: 'oklch(0.55 0.02 210)' }}>Candidate</span>
-                      <span className="font-bold text-white">{selectedCand.name}</span>
+                      <span style={{ color: 'var(--aq-text-muted)' }}>Candidate</span>
+                      <span className="font-bold" style={{ color: 'var(--aq-text-primary)' }}>{selectedCand.name}</span>
                     </div>
                     <div className="flex justify-between">
-                      <span style={{ color: 'oklch(0.55 0.02 210)' }}>Role</span>
-                      <span className="font-bold text-white">{selectedCand.jobRole}</span>
+                      <span style={{ color: 'var(--aq-text-muted)' }}>Role</span>
+                      <span className="font-bold" style={{ color: 'var(--aq-text-primary)' }}>{selectedCand.jobRole}</span>
                     </div>
                     <div className="flex justify-between">
-                      <span style={{ color: 'oklch(0.55 0.02 210)' }}>Salary</span>
-                      <span className="font-bold text-white">₹{offerForm.offeredSalary.toLocaleString()}/mo</span>
+                      <span style={{ color: 'var(--aq-text-muted)' }}>Salary</span>
+                      <span className="font-bold" style={{ color: 'oklch(0.55 0.19 167)' }}>₹{offerForm.offeredSalary.toLocaleString()}/mo</span>
                     </div>
                     <div className="flex justify-between">
-                      <span style={{ color: 'oklch(0.55 0.02 210)' }}>Joining</span>
-                      <span className="font-bold text-white">{offerForm.joiningDate || '—'}</span>
+                      <span style={{ color: 'var(--aq-text-muted)' }}>Joining</span>
+                      <span className="font-bold" style={{ color: 'var(--aq-text-primary)' }}>{offerForm.joiningDate || '—'}</span>
                     </div>
                   </div>
                 </div>
